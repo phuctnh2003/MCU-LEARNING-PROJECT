@@ -1,11 +1,12 @@
-
-from asyncio import sleep
 import sqlite3
+import logging
+from my_log import AppLogger
 from datetime import datetime, timedelta
 from function import md5_transmit, is_valid_password
-class SQLFunction:
-    
+from error_codes import *
 
+log = AppLogger()
+class SQLFunction:
     def __init__(self, db_path="users.db"):
         self.db_path = db_path
         self._init_db()
@@ -14,28 +15,28 @@ class SQLFunction:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                name TEXT,
-                email TEXT,
-                password TEXT,
-                device_id TEXT 
-            )
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    name TEXT,
+                    email TEXT UNIQUE,
+                    password TEXT,
+                    device_id TEXT 
+                )
             """)
             cursor.execute("""
-            CREATE TABLE IF NOT EXISTS devices (
-                device_id TEXT PRIMARY KEY,
-                last_seen DATETIME
-            )
+                CREATE TABLE IF NOT EXISTS devices (
+                    device_id TEXT PRIMARY KEY,
+                    last_seen DATETIME
+                )
             """)
-            
-        conn.commit()
+            conn.commit()
 
-
+   
     def register_user(self, username, name, email, password):
         if not is_valid_password(password):
-            return "INVALID_PASSWORD"
+            log.error("Register invalid password format")
+            return INVALID_PASSWORD
 
         hashed_password = md5_transmit(password)
 
@@ -43,27 +44,32 @@ class SQLFunction:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
-            # Kiểm tra username đã tồn tại chưa
+            # Kiểm tra username
             cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
             if cursor.fetchone():
-                return "USERNAME_EXISTS"
+                log("Register username already exists")
+                return USERNAME_EXISTS
 
-            # Thêm người dùng mới
-            cursor.execute(
-                "INSERT INTO users (username, name, email, password) VALUES (?, ?, ?, ?)",
-                (username, name, email, hashed_password)
-            )
+            # Kiểm tra email
+            cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+            if cursor.fetchone():
+                log("Register email already exists")
+                return EMAIL_EXISTS
+
+            cursor.execute("""
+                INSERT INTO users (username, name, email, password)
+                VALUES (?, ?, ?, ?)
+            """, (username, name, email, hashed_password))
             conn.commit()
-            return "SUCCESS"
+            return SUCCESS
         except Exception as e:
-            print(f"Error during register: {e}")
-            return "ERROR"
+            log(f"Register Error: {e}")
+            return DB_ERROR
         finally:
             conn.close()
 
     def login_user(self, username, password):
         hashed_password = md5_transmit(password)
-
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -71,12 +77,39 @@ class SQLFunction:
             cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
             row = cursor.fetchone()
             if row and row[0] == hashed_password:
-                return "SUCCESS"
+                return SUCCESS
             else:
-                return "INVALID_CREDENTIALS"
+                return INVALID_CREDENTIALS
         except Exception as e:
-            print(f"Error during login: {e}")
-            return "ERROR"
+            log(f"Login Error: {e}")
+            return DB_ERROR
+        finally:
+            conn.close()
+
+    def forget_password(self, email, old_password, new_password):
+        if not is_valid_password(new_password):
+            return INVALID_PASSWORD
+
+        hashed_old = md5_transmit(old_password)
+        hashed_new = md5_transmit(new_password)
+
+        if hashed_old == hashed_new:
+            return SAME_PASSWORD
+
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT id FROM users WHERE email = ? AND password = ?", (email, hashed_old))
+            if cursor.fetchone():
+                cursor.execute("UPDATE users SET password = ? WHERE email = ?", (hashed_new, email))
+                conn.commit()
+                return SUCCESS
+            else:
+                return INVALID_CREDENTIALS
+        except Exception as e:
+            log(f"Forgot Password Error: {e}")
+            return DB_ERROR
         finally:
             conn.close()
 
@@ -84,48 +117,28 @@ class SQLFunction:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-
             cursor.execute("SELECT username, name, email FROM users WHERE username = ?", (username,))
             row = cursor.fetchone()
-            if row:
-                return {
-                    "username": row[0],
-                    "name": row[1],
-                    "email": row[2]
-                }
-            else:
-                return "USER_NOT_FOUND"
+            return {"username": row[0], "name": row[1], "email": row[2]} if row else USER_NOT_FOUND
         except Exception as e:
-            print(f"Error during get_user_info: {e}")
-            return "ERROR"
+            log(f"Get User Info Error: {e}")
+            return DB_ERROR
         finally:
             conn.close()
 
-    def forget_password(self, email, old_password, new_password):
-        if not is_valid_password(new_password):
-            return "INVALID_PASSWORD"
-
-        hashed_old_password = md5_transmit(old_password)
-        hashed_new_password = md5_transmit(new_password)
-
+    def show_all_users(self):
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-
-            cursor.execute("SELECT id FROM users WHERE email = ? AND password = ?", (email, hashed_old_password))
-            row = cursor.fetchone()
-            if row:
-                cursor.execute("UPDATE users SET password = ? WHERE email = ?", (hashed_new_password, email))
-                conn.commit()
-                return "SUCCESS"
-            else:
-                return "INVALID_CREDENTIALS"
+            cursor.execute("SELECT * FROM users")
+            return cursor.fetchall()
         except Exception as e:
-            print(f"Error during forget_password: {e}")
-            return "ERROR"
+            log(f"Show All Users Error: {e}")
+            return DB_ERROR
         finally:
             conn.close()
 
+    # Các hàm quản lý thiết bị 
     def upsert_device(self, device_id, last_seen):
         try:
             conn = sqlite3.connect(self.db_path)
@@ -136,10 +149,9 @@ class SQLFunction:
                 cursor.execute("UPDATE devices SET last_seen = ? WHERE device_id = ?", (last_seen, device_id))
             else:
                 cursor.execute("INSERT INTO devices (device_id, last_seen) VALUES (?, ?)", (device_id, last_seen))
-
             conn.commit()
         except Exception as e:
-            print(f"Error during heartbeat: {e}")
+            log(f"Upsert Device Error: {e}")
         finally:
             conn.close()
 
@@ -147,13 +159,10 @@ class SQLFunction:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-
             threshold = datetime.utcnow() - timedelta(seconds=30)
             cursor.execute("SELECT device_id FROM devices WHERE last_seen >= ?", (threshold.isoformat(),))
             row = cursor.fetchone()
-            if row:
-                return row[0]
-            return None
+            return row[0] if row else None
         finally:
             conn.close()
 
@@ -186,69 +195,46 @@ class SQLFunction:
             conn.close()
 
     def cleanup_stale_devices(self):
-            try:
-                conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            threshold = datetime.utcnow() - timedelta(seconds=30)
+            cursor.execute("SELECT device_id FROM devices WHERE last_seen < ?", (threshold.isoformat(),))
+            stale_devices = [row[0] for row in cursor.fetchall()]
+            if stale_devices:
+                cursor.executemany("UPDATE users SET device_id = NULL WHERE device_id = ?", [(d,) for d in stale_devices])
+                conn.commit()
+        finally:
+            conn.close()
 
-                threshold = datetime.utcnow() - timedelta(seconds=30)
-
-                # Lấy các device_id đã ngắt kết nối
-                cursor.execute("SELECT device_id FROM devices WHERE last_seen < ?", (threshold.isoformat(),))
-                stale_devices = [row[0] for row in cursor.fetchall()]
-
-                if stale_devices:
-                    # Xoá device_id khỏi bảng user nếu nó là thiết bị đã ngắt kết nối
-                    cursor.executemany("UPDATE users SET device_id = NULL WHERE device_id = ?", [(d,) for d in stale_devices])
-                    conn.commit()
-            finally:
-                conn.close()
     def is_device_online(self, device_id):
-            try:
-                conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            threshold = datetime.utcnow() - timedelta(seconds=30)
+            cursor.execute("SELECT 1 FROM devices WHERE device_id = ? AND last_seen >= ?", (device_id, threshold.isoformat()))
+            return cursor.fetchone() is not None
+        finally:
+            conn.close()
 
-                threshold = datetime.utcnow() - timedelta(seconds=30)
-                cursor.execute(
-                    "SELECT 1 FROM devices WHERE device_id = ? AND last_seen >= ?",
-                    (device_id, threshold.isoformat())
-                )
-                row = cursor.fetchone()
-                return row is not None
-            finally:
-                conn.close()
     def is_device_assigned_to_another_user(self, username, device_id):
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute("""
-                SELECT username FROM users
-                WHERE device_id = ? AND username != ?
-            """, (device_id, username))
-            row = cursor.fetchone()
-            return row is not None  # Có người dùng khác đã dùng device_id này
+            cursor.execute("SELECT username FROM users WHERE device_id = ? AND username != ?", (device_id, username))
+            return cursor.fetchone() is not None
         finally:
             conn.close()
 
-    def show_all_users(self):
-            try:
-                conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
-                cursor.execute("SELECT * FROM users")
-                rows = cursor.fetchall()
-                return rows
-            except Exception as e:
-                print(f"Error during show_all_users: {e}")
-                return "ERROR"
-            finally:
-                conn.close()
     
 if __name__ == '__main__':
 
     sql = SQLFunction()
     # Example usage
-    sql.show_all_users()
-    sql.clear_user_device("phucbm")
+    
     for user in sql.show_all_users():
         print(user)
-
-
+   # print(sql.forget_password("kingherotd@gmail.com", "Phuc123@", "Phuc321@"))
+    #print(sql.register_user("phongpt", "Phong", "phong@gmail.com", "Phong123@"))
+    #
+    #print(sql.forget_password("phong@gmail.com", "Phong321@", "Phong123@"))
