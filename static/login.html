@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign up/ Log in</title>
+    <link rel="stylesheet" href="/static/css/login.css">
+    <link href="https://fonts.googleapis.com/css?family=Fira+Sans" rel="stylesheet">
+
+</head>
+<body>
+<div class="form-structor">
+    <div class="signup">
+        <h2 class="form-title" id="signup"><span>or</span>Sign up</h2>
+        <div class="form-holder">
+            <input type="text" class="input" placeholder="Username" id="signup-username" required />
+            <input type="text" class="input" placeholder="Name" id="signup-name" required />
+            <input type="text" class="input" placeholder="Email" id="signup-email" required />
+           
+        <div style="position: relative;">
+            <input type="password" class="input" placeholder="Password" id="signup-password" required />
+            <input type="checkbox" id="show-signup-password" style="position: absolute; top: 50%; right: 1px; transform: translateY(-50%); cursor: pointer;">
+        </div>
+        </div>
+        <button class="submit-btn" id="signup-btn">Sign up</button>
+        <!-- Thông báo lỗi cho đăng ký -->
+        <div id="signup-error-message" style="color: red; text-align: center; margin-top: 10px;"></div>
+    </div>
+
+    <div class="login slide-up">
+        <div class="center">
+            <h2 class="form-title" id="login"><span>or</span>Log in</h2>
+            <div class="form-holder">
+                <input type="text" class="input" placeholder="Username" id="login-username" required />
+
+                <!-- Thêm checkbox để hiển thị/tắt mật khẩu -->
+            <div style="position: relative;">
+                <input type="password" class="input" placeholder="Password" id="login-password" required />
+                <input type="checkbox" id="show-password" style="position: absolute; top: 50%; right: 1px; transform: translateY(-50%); cursor: pointer;">
+            </div>
+            </div>
+            <button class="submit-btn" id="login-btn">Log in</button>
+            <!-- Thông báo lỗi cho đăng nhập -->
+            <div id="login-error-message" style="color: red; text-align: center; margin-top: 10px;"></div>
+         <!-- Forgot Password-->
+        <div class="forget-password-section">
+            <a href="#" id="show-forget-password-form" class="forget-password-link">Forgot Password?</a>
+        </div>
+    </div>
+</div>
+<!-- Modal backdrop -->
+<div id="modal-backdrop" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:999;"></div>
+
+<!-- Modal for Forget Password -->
+<div id="forget-password-modal" >
+  <h3 style="margin-top: 0; text-align: center;">Reset Password</h3>
+  <input type="email" class="input" placeholder="Your email" id="modal-forget-email" required /><br>
+  <!-- Old password -->
+<div style="position: relative;">
+  <input type="password" class="input" placeholder="Old Password" id="modal-forget-old-password" required />
+  <input type="checkbox" id="show-old-password" style="position: absolute; top: 50%; right: 1px; transform: translateY(-50%); cursor: pointer;">
+</div>
+
+<!-- New password -->
+<div style="position: relative;">
+  <input type="password" class="input" placeholder="New Password" id="modal-forget-new-password" required />
+  <input type="checkbox" id="show-new-password" style="position: absolute; top: 50%; right: 1px; transform: translateY(-50%); cursor: pointer;">
+</div>
+  <button style="margin-top: 10px; background-color: #6B92A4;" class="submit-btn" id="modal-forget-btn">Reset</button>
+  <button style="margin-top: 10px; background-color: #6B92A4;" class="submit-btn" id="modal-close-btn">Close</button>
+  <div id="modal-forget-error-message" style="color: red; text-align: center; margin-top: 10px;"></div>
+
+</div>
+
+<div class="version">Version 1.0</div>
+</div>
+<script src="/static/js/login.js"></script>
+</body>
+</html>
