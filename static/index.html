@@ -1,24 +1,621 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>Dashboard</title>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css?family=Fira+Sans" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <title>Giao diện học tập</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  <link rel="stylesheet" href="/static/css/index.css" />
-  <link href="https://fonts.googleapis.com/css?family=Fira+Sans" rel="stylesheet" />
+    body {
+      font-family: Arial, sans-serif;
+      background: #c2bbba;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .main-box {
+      display: flex;
+      border-radius: 20px;
+      background-color: #6B92A4;
+      padding: 20px;
+      min-height: 600px;
+      max-width: 2000px;
+      width: 100%;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar {
+      width: 180px;
+      background-color: #6B92A4;
+      color: white;
+      display: none;
+      flex-direction: column;
+      padding: 20px 10px;
+      border-radius: 20px 0 0 20px;
+    }
+
+    .sidebar.active {
+      display: flex;
+    }
+
+    .menu-button {
+      font-size: 28px;
+      color: white;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 10px;
+      position: absolute;
+      top: 20px;
+      left: 5px;
+      z-index: 2;
+    }
+
+    .menu-close {
+      align-self: flex-end;
+      font-size: 24px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    .sidebar-item {
+      padding: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+    }
+
+    .sidebar-item.disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .sidebar-item:hover:not(.disabled) {
+      background-color: #6B92A4;
+      border-radius: 8px;
+    }
+
+    .content {
+      flex: 1;
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      margin-left: 30px;
+      min-height: 500px;
+      width: 100%;
+    }
+
+    .tab {
+      display: none;
+    }
+
+    .tab.active {
+      display: block;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      display: inline-block;
+    }
+
+    @media (max-width: 768px) {
+      .main-box {
+        flex-direction: column;
+      }
+
+      .content {
+        margin-left: 0;
+        margin-top: 20px;
+        padding: 20px;
+      }
+
+      .sidebar {
+        border-radius: 16px;
+        width: 100%;
+      }
+
+      .right-panel {
+        margin-left: 0;
+        margin-top: 20px;
+      }
+    }
+
+    #buttonContainer {
+      max-height: 300px;
+      max-width: 1500px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .template-button {
+      border: 2px solid #6B92A4;
+      border-radius: 12px;
+      padding: 16px;
+      background-color: white;
+      box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      color: #6B92A4;
+      font-weight: bold;
+      font-size: 18px;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .template-button:hover {
+      background-color: #eaf2ff;
+    }
+
+    .template-button .description {
+      font-size: 14px;
+      color: #666;
+      font-weight: normal;
+      margin-top: 6px;
+    }
+
+    .header-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      margin-bottom: 30px;
+      gap: 20px;
+    }
+
+    .header-row h2 {
+      font-size: 35px;
+      color: black;
+      font-weight: bold;
+    }
+
+    .header-row input {
+      padding: 10px 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      max-width: 300px;
+      width: 100%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      transition: border-color 0.2s ease;
+    }
+
+    .header-row input:focus {
+      border-color: #6B92A4;
+      outline: none;
+    }
+
+    .user-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 40px;
+    }
+
+    .logo-img {
+      height: 80px;
+    }
+
+    .user-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white; /* màu viền xanh lá, bạn có thể đổi */
+  padding: 1px; /* để viền không cắt hình */
+  background-color: white; /* nền trắng xung quanh viền */
+    }
+    .username {
+      font-size: 18px;
+      color: black;
+      font-weight: bold;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.online {
+      background-color: #4CAF50;
+    }
+
+    .status-dot.offline {
+      background-color: #f44336;
+    }
+   #loading-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 24px;
+  flex-direction: column;
+}
+    .spinner {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #00ff88;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
-  <h1>Welcome, <span id="username"></span></h1>
-  <p>Email: <span id="email"></span></p>
-  <p>Name: <span id="name"></span></p>
-  <button style="color: red;" id="logout-btn">Logout</button>
-
-  <div id="loading-overlay">
+    <div id="loading-overlay">
     <div class="spinner"></div>
     <div>Trying to reconnect...</div>
   </div>
-<script src="/static/js/index.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-</body>
-</html>
+<div class="main-box">
+  <!-- MENU BUTTON -->
+  <button class="menu-button" id="openMenu">☰</button>
+
+  <!-- MENU BÊN TRÁI -->
+  <div class="sidebar" id="sidebar">
+    <div class="menu-close" id="closeMenu">✖</div>
+    <div class="sidebar-item" onclick="showTab('home')">
+      <img src="./images/ri_dashboard-fill.svg" class="icon" /> Home
+    </div>
+    <div class="sidebar-item" onclick="showTab('link')">
+      <img src="./images/people.svg" class="icon" /> Connection
+    </div>
+    <div class="sidebar-item" onclick="showTab('account')">
+      <img src="./images/User.svg" class="icon" /> Account
+    </div>
+    <div class="sidebar-item" id="logout-btn">
+      <img src="./images/logout.svg" class="icon" /> Logout
+        </div>
+  </div>
+
+  <!-- KHUNG TRẮNG NỘI DUNG -->
+  <div class="content">
+    <!-- TAB HOME -->
+    <div id="home" class="tab active">
+      <div class="user-info">
+        <img src="./images/Logo-TA.png" class="logo-img" />
+        <div class="user-meta">
+          <img src="./images/user-octagon.svg" class="user-avatar" />
+         <span id="username" class="username">Nguyễn Văn A</span>
+          <span class="status-dot online"></span>
+        </div>
+      </div>
+      <div style="max-width: 1500px; width: 100%;"> 
+        <div class="header-row">
+          <h2>Templates</h2>
+          <input type="text" id="searchInput" onkeyup="filterButtons()" placeholder="Search templates..." />
+        </div>
+        <div id="buttonContainer"></div>
+      </div>
+    </div>
+
+    <!-- TAB LINK -->
+    <div id="link" class="tab">
+      <h2>Connection</h2>
+      <p>Connection list will be displayed here.</p>
+    </div>
+
+    <!-- TAB ACCOUNT -->
+    <div id="account" class="tab">
+      <h2>Account</h2>
+      <p>Account information will be displayed here.</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+    let deviceIdGlobal = null;
+    const sidebar = document.getElementById('sidebar');
+    const openMenu = document.getElementById('openMenu');
+    const closeMenu = document.getElementById('closeMenu');
+    const buttonContainer = document.getElementById('buttonContainer');
+    const templates = [
+    { name: 'I2C', description: 'Giao tiếp I2C cơ bản' },
+    { name: 'LED Blink', description: 'Nhấp nháy LED' },
+    { name: 'UART', description: 'Truyền thông UART' },
+    { name: 'ADC Read', description: 'Đọc ADC' },
+    { name: 'LCD Display', description: 'Hiển thị trên LCD' },
+    { name: 'Button Control', description: 'Điều khiển nút nhấn' }
+  ];
+  openMenu.addEventListener('click', () => {
+    sidebar.classList.add('active');
+    openMenu.style.display = 'none';
+  });
+
+  closeMenu.addEventListener('click', () => {
+    sidebar.classList.remove('active');
+    openMenu.style.display = 'block';
+  });
+
+  function showTab(id) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    sidebar.classList.remove('active');
+    openMenu.style.display = 'block';
+
+    const rightPanel = document.getElementById('rightPanel');
+    if (rightPanel) {
+      rightPanel.style.display = (id === 'home') ? 'flex' : 'none';
+    }
+  }
+
+  
+
+  function renderButtons(filterText = '') {
+    buttonContainer.innerHTML = '';
+    const filtered = templates.filter(t =>
+      t.name.toLowerCase().includes(filterText.toLowerCase())
+    );
+
+    if (filtered.length === 0) {
+      buttonContainer.innerHTML = '<p>No templates found.</p>';
+      return;
+    }
+
+    filtered.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'template-button';
+      btn.innerHTML = `
+        <div>${t.name}</div>
+        <div class="description">${t.description}</div>
+      `;
+      btn.onclick = () => alert('Bạn đã chọn: ' + t.name);
+      buttonContainer.appendChild(btn);
+    });
+  }
+
+  function filterButtons() {
+    const keyword = document.getElementById('searchInput').value;
+    renderButtons(keyword);
+  }
+    
+  function showToast(type, title, text) {
+    Swal.fire({
+      icon: type,
+      title: title,
+      text: text,
+      timer: 2000,
+      timerProgressBar: true,
+      showConfirmButton: false
+    });
+  }
+
+  function showLoading(show) {
+    document.getElementById("loading-overlay").style.display = show ? "flex" : "none";
+  }
+
+  function parseJwt(token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      console.error("Failed to parse JWT:", e);
+      return null;
+    }
+  }
+
+  async function fetchUserInfo() {
+    const token = localStorage.getItem("jwt_token");
+    if (!token) {
+      showToast("error", "Missing Token", "Please log in again.");
+      window.location.href = "/";
+      return;
+    }
+
+    const payload = parseJwt(token);
+ 
+    if (!payload || !payload.device_id) {
+      showToast("error", "Invalid Token", "Token format is invalid. Please log in again.");
+      localStorage.removeItem("jwt_token");
+      window.location.href = "/";
+      return;
+    }
+
+    deviceIdGlobal = payload.device_id;
+    checkDeviceStatusPeriodically();  
+       console.log("Parsed payload:", payload);
+console.log("deviceIdGlobal:", deviceIdGlobal);  
+    try {
+      const response = await fetch("/user_info", {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer " + token
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.status === 200) {
+        document.getElementById("username").textContent = data.username;
+       
+      } else {
+        handleApiError(data);
+        localStorage.removeItem("jwt_token");
+        window.location.href = "/";
+      }
+    } catch (err) {
+      console.error("Error fetching user info:", err);
+      showToast("error", "Network Error", "Unable to fetch user info.");
+    }
+  }
+
+  document.getElementById("logout-btn").addEventListener("click", async () => {
+    const token = localStorage.getItem("jwt_token");
+    if (!token) {
+      window.location.href = "/";
+      return;
+    }
+
+    try {
+      const response = await fetch("/logout", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.removeItem("jwt_token");
+        window.location.href = "/";
+      } else {
+        handleApiError(data);
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      showToast("error", "Logout Failed", "An error occurred during logout.");
+    }
+  });
+
+  async function checkDeviceStatusPeriodically() {
+    const token = localStorage.getItem("jwt_token");
+    if (!token || !deviceIdGlobal) return;
+
+    try {
+      const res = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (!data.online) {
+          await attemptReconnect();
+        } else {
+          console.log("Device is online.");
+        }
+      }
+    } catch (err) {
+      console.error("Error checking device status:", err);
+    }
+
+    setTimeout(checkDeviceStatusPeriodically, 3000);
+  }
+
+  async function attemptReconnect() {
+    const confirmReconnect = await Swal.fire({
+      icon: "warning",
+      title: "Device Offline",
+      text: "Raspberry Pi is currently offline. Do you want to retry?",
+      showCancelButton: true,
+      confirmButtonText: "Reconnect",
+      cancelButtonText: "Logout"
+    });
+
+    if (!confirmReconnect.isConfirmed) {
+      await logoutUser();
+      return;
+    }
+
+    showLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5s
+
+    try {
+      const reconnectRes = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
+      showLoading(false);
+      if (reconnectRes.ok) {
+        const reconnectData = await reconnectRes.json();
+        if (reconnectData.online) {
+          showToast("success", "Reconnected", "Raspberry Pi is back online.");
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          await attemptReconnect();
+        }
+      } else {
+        await attemptReconnect();
+      }
+    } catch (e) {
+      console.error("Reconnect failed:", e);
+      showLoading(false);
+      await attemptReconnect();
+    }
+  }
+
+  async function logoutUser() {
+    const token = localStorage.getItem("jwt_token");
+    if (!token) {
+      window.location.href = "/";
+      return;
+    }
+
+    try {
+      await fetch("/logout", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token
+        }
+      });
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
+
+    localStorage.removeItem("jwt_token");
+    window.location.href = "/";
+  }
+
+  function handleApiError(data) {
+    const code = data?.code;
+    const message = data?.message || "Unknown error";
+
+    switch (code) {
+      case 1001: // MISSING_TOKEN
+        showToast("error", "Missing Token", message);
+        break;
+      case 1002: // INVALID_TOKEN_FORMAT
+        showToast("error", "Invalid Token Format", message);
+        break;
+      case 1003: // TOKEN_EXPIRED
+        showToast("error", "Token Expired", message);
+        break;
+      case 1004: // INVALID_TOKEN
+        showToast("error", "Invalid Token", message);
+        break;
+      case 1005: // USER_NOT_FOUND
+        showToast("error", "User Not Found", message);
+        break;
+      case 1006: // INTERNAL_ERROR
+        showToast("error", "Server Error", message);
+        break;
+      case 1007: // MISSING_DEVICE_ID
+        showToast("error", "Missing Device ID", message);
+        break;
+      default:
+        showToast("error", "Error", message);
+    }
+  }
+  fetchUserInfo();
+  renderButtons();
+</script>
+

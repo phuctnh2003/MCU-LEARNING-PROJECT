@@ -93,7 +93,20 @@ document.getElementById('login-btn').addEventListener('click', async () => {
         case 0: // SUCCESS
             localStorage.setItem("jwt_token", data.token);
             resetLoginForm();
-            window.location.href = "index";
+             Swal.fire({
+      icon: 'success',
+      title: 'Success',
+      text: 'Login Successful',
+      timer: 2000,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      toast: true,
+      position: 'top-end',
+      didClose: () => {
+        window.location.href = "index";
+      }
+    });
+    break;
             break;
         case 1201: // INVALID_CREDENTIALS
             showToast("error", "Error", "Invalid username or password.");
