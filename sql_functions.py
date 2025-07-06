@@ -117,9 +117,9 @@ class SQLFunction:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute("SELECT username, name, email FROM users WHERE username = ?", (username,))
+            cursor.execute("SELECT username, name, email, device_id FROM users WHERE username = ?", (username,))
             row = cursor.fetchone()
-            return {"username": row[0], "name": row[1], "email": row[2]} if row else USER_NOT_FOUND
+            return {"username": row[0], "name": row[1], "email": row[2], "device_id": row[3]} if row else USER_NOT_FOUND
         except Exception as e:
             log(f"Get User Info Error: {e}")
             return DB_ERROR

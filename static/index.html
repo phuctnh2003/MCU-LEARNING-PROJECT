@@ -46,6 +46,30 @@
     .sidebar.active {
       display: flex;
     }
+     .sidebar-item {
+      padding: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 25px;
+      transition: all 0.3s ease;
+      border-radius: 8px;
+    }
+
+    .sidebar-item:hover:not(.disabled) {
+      background-color: #5a7f90;
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar-item .icon {
+      transition: all 0.3s ease;
+    }
+
+    .sidebar-item:hover .icon {
+      transform: scale(1.1);
+    }
 
     .menu-button {
       font-size: 28px;
@@ -73,7 +97,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 18px;
+      font-size: 25px;
     }
 
     .sidebar-item.disabled {
@@ -105,8 +129,8 @@
     }
 
     .icon {
-      width: 20px;
-      height: 20px;
+      width: 35px;
+      height: 35px;
       display: inline-block;
     }
 
@@ -122,7 +146,7 @@
       }
 
       .sidebar {
-        border-radius: 16px;
+        border-radius: 20px;
         width: 100%;
       }
 
@@ -216,13 +240,13 @@
     }
 
     .user-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid white; /* màu viền xanh lá, bạn có thể đổi */
-  padding: 1px; /* để viền không cắt hình */
-  background-color: white; /* nền trắng xung quanh viền */
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid white;
+      padding: 1px;
+      background-color: white;
     }
     .username {
       font-size: 18px;
@@ -244,21 +268,23 @@
     .status-dot.offline {
       background-color: #f44336;
     }
-   #loading-overlay {
-  display: none;
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 9999;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  font-size: 24px;
-  flex-direction: column;
-}
+    
+    #loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 24px;
+      flex-direction: column;
+    }
+    
     .spinner {
       border: 6px solid #f3f3f3;
-      border-top: 6px solid #00ff88;
+      border-top: 6px solid #6B92A4;
       border-radius: 50%;
       width: 50px;
       height: 50px;
@@ -270,352 +296,676 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    
+    .account-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      flex-direction: column;
+      width: 100%;
+      max-width: 1000px;
+      max-height: 350px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .account-card {
+      background-color: #f8f8f8;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      width: 100%;
+    }
+    
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .info-item {
+      background-color: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      border: 1px solid #eee;
+    }
+
+    .info-content {
+      flex: 1;
+    }
+
+    .info-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .info-value {
+      font-size: 18px;
+      color: #000;
+      font-weight: 500;
+    }
+
+    .info-icon {
+      width: 20px;
+      height: 20px;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+      margin-left: 15px;
+    }
+
+    .info-item:hover .info-icon {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* Account Layout */
+    .account-layout {
+      display: flex;
+      gap: 30px;
+    }
+
+    .account-left {
+      width: 250px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .account-right {
+      flex: 1;
+    }
+
+    /* User Profile */
+    .user-profile {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .user-avatar-large {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 15px;
+    }
+
+    .user-avatar-large img {
+      width: 100px;
+      height: 100px;
+    }
+
+    .user-profile h3 {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .user-profile p {
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* Reset Password Button */
+    .reset-password-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px;
+      background-color: #6B92A4;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-bottom: 30px;
+    }
+
+    .reset-password-btn:hover {
+      background-color: #5a7f90;
+    }
+
+    .reset-password-btn img {
+      width: 16px;
+      height: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .account-layout {
+        flex-direction: column;
+      }
+      
+      .account-left {
+        width: 100%;
+        order: 2;
+        margin-top: 30px;
+      }
+      
+      .account-right {
+        order: 1;
+      }
+    }
   </style>
 </head>
 <body>
     <div id="loading-overlay">
-    <div class="spinner"></div>
-    <div>Trying to reconnect...</div>
-  </div>
-<div class="main-box">
-  <!-- MENU BUTTON -->
-  <button class="menu-button" id="openMenu">☰</button>
+        <div class="spinner"></div>
+        <div>Trying to reconnect...</div>
+    </div>
+    <div class="main-box">
+        <!-- MENU BUTTON -->
+        <button class="menu-button" id="openMenu">☰</button>
 
-  <!-- MENU BÊN TRÁI -->
-  <div class="sidebar" id="sidebar">
-    <div class="menu-close" id="closeMenu">✖</div>
-    <div class="sidebar-item" onclick="showTab('home')">
-      <img src="./images/ri_dashboard-fill.svg" class="icon" /> Home
-    </div>
-    <div class="sidebar-item" onclick="showTab('link')">
-      <img src="./images/people.svg" class="icon" /> Connection
-    </div>
-    <div class="sidebar-item" onclick="showTab('account')">
-      <img src="./images/User.svg" class="icon" /> Account
-    </div>
-    <div class="sidebar-item" id="logout-btn">
-      <img src="./images/logout.svg" class="icon" /> Logout
+        <!-- MENU BÊN TRÁI -->
+        <div class="sidebar" id="sidebar">
+            <div class="menu-close" id="closeMenu">✖</div>
+            <div class="sidebar-item" onclick="showTab('home')">
+                <img src="/static/images/ri_dashboard-fill.svg" class="icon" /> Home
+            </div>
+            <div class="sidebar-item" onclick="showTab('link')">
+                <img src="/static/images/icon_connected.png" class="icon" /> Connection
+            </div>
+            <div class="sidebar-item" onclick="showTab('account')">
+                <img src="/static/images/account.png" class="icon" sizes="30x40"/> Account
+            </div>
+            <div class="sidebar-item" id="logout-btn">
+                <img src="/static/images/logout.png" class="icon" sizes="20x20"/> Logout
+            </div>
         </div>
-  </div>
 
-  <!-- KHUNG TRẮNG NỘI DUNG -->
-  <div class="content">
-    <!-- TAB HOME -->
-    <div id="home" class="tab active">
-      <div class="user-info">
-        <img src="./images/Logo-TA.png" class="logo-img" />
-        <div class="user-meta">
-          <img src="./images/user-octagon.svg" class="user-avatar" />
-         <span id="username" class="username">Nguyễn Văn A</span>
-          <span class="status-dot online"></span>
+        <!-- KHUNG TRẮNG NỘI DUNG -->
+        <div class="content">
+            <!-- TAB HOME -->
+            <div id="home" class="tab active">
+                <div class="user-info">
+                    <img src="/static/images/Logo-TA.png" class="logo-img" />
+                    <div class="user-meta">
+                        <img src="/static/images/user-avatar-100.png" class="user-avatar" />
+                        <span id="username-display" class="username"></span>
+                        <span class="status-dot online"></span>
+                    </div>
+                </div>
+                <div style="max-width: 1500px; width: 100%;"> 
+                    <div class="header-row">
+                        <h2>Templates</h2>
+                        <input type="text" id="searchInput" onkeyup="filterButtons()" placeholder="Search templates..." />
+                    </div>
+                    <div id="buttonContainer"></div>
+                </div>
+            </div>
+
+            <!-- TAB LINK -->
+            <div id="link" class="tab">
+                <h2>Connection</h2>
+                <p>Connection list will be displayed here.</p>
+            </div>
+
+            <!-- TAB ACCOUNT -->
+            <div id="account" class="tab">    
+                <div class="user-info">
+                    <img src="/static/images/Logo-TA.png" class="logo-img" />
+                    <div class="user-meta">
+                        <img src="/static/images/user-avatar-100.png" class="user-avatar" />
+                        <span id="profile-username-display" class="username"></span>
+                        <span class="status-dot online"></span>
+                    </div>
+                </div>
+                
+                <div class="account-wrapper">
+                    <div class="account-card">
+                        <h2 style="font-size: 24px; margin-bottom: 20px; color: #333; font-weight: normal;">Personal information</h2>
+                        <p style="font-size: 16px; color: #666; margin-bottom: 30px;">
+                            Manage your personal information, including username, email address where you can be contacted
+                        </p>
+                        
+                        <div class="account-layout">
+                            <!-- Phần bên trái - Logo và nút reset -->
+                            <div class="account-left">
+                                <div class="user-profile">
+                                    <div class="user-avatar-large">
+                                        <img src="/static/images/user-avatar-100.png" sizes="100x100"/>
+                                    </div>
+                                    <h3 id="profile-name-display"></h3>
+                                    <p id="profile-email-display"></p>
+                                </div>
+                                
+                                <button class="reset-password-btn" id="resetPasswordBtn">
+                                    <img src="/static/images/reset-password.png" alt="Reset Password"/>
+                                    Reset Password
+                                </button>
+                            </div>
+                            
+                            <!-- Phần bên phải - Thông tin cá nhân -->
+                            <div class="account-right">
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <div class="info-content">
+                                            <div class="info-label">Username</div>
+                                            <div class="info-value" id="account-username-display"></div>
+                                        </div>
+                                        <img src="/static/images/username.png" class="info-icon" />
+                                    </div>
+                                    
+                                    <div class="info-item">
+                                        <div class="info-content">
+                                            <div class="info-label">Name</div>
+                                            <div class="info-value" id="account-name-display"></div>
+                                        </div>
+                                        <img src="/static/images/name.png" class="info-icon" />
+                                    </div>
+                                    
+                                    <div class="info-item">
+                                        <div class="info-content">
+                                            <div class="info-label">Email</div>
+                                            <div class="info-value" id="account-email-display"></div>
+                                        </div>
+                                        <img src="/static/images/email.png" class="info-icon" />
+                                    </div>
+                                    
+                                    <div class="info-item">
+                                        <div class="info-content">
+                                            <div class="info-label">Device ID</div>
+                                            <div class="info-value" id="account-device-display"></div>
+                                        </div>
+                                        <img src="/static/images/pi.png" class="info-icon"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div style="max-width: 1500px; width: 100%;"> 
-        <div class="header-row">
-          <h2>Templates</h2>
-          <input type="text" id="searchInput" onkeyup="filterButtons()" placeholder="Search templates..." />
-        </div>
-        <div id="buttonContainer"></div>
-      </div>
     </div>
 
-    <!-- TAB LINK -->
-    <div id="link" class="tab">
-      <h2>Connection</h2>
-      <p>Connection list will be displayed here.</p>
-    </div>
+    <script>
+        let deviceIdGlobal = null;
+        let currentUser = {
+            username: '',
+            name: '',
+            email: '',
+            device_id: ''
+        };
+        const sidebar = document.getElementById('sidebar');
+        const openMenu = document.getElementById('openMenu');
+        const closeMenu = document.getElementById('closeMenu');
+        const buttonContainer = document.getElementById('buttonContainer');
+        const templates = [
+            { name: 'I2C', description: 'Giao tiếp I2C cơ bản' },
+            { name: 'LED Blink', description: 'Nhấp nháy LED' },
+            { name: 'UART', description: 'Truyền thông UART' },
+            { name: 'ADC Read', description: 'Đọc ADC' },
+            { name: 'LCD Display', description: 'Hiển thị trên LCD' },
+            { name: 'Button Control', description: 'Điều khiển nút nhấn' }
+        ];
+        
+        openMenu.addEventListener('click', () => {
+            sidebar.classList.add('active');
+            openMenu.style.display = 'none';
+        });
 
-    <!-- TAB ACCOUNT -->
-    <div id="account" class="tab">
-      <h2>Account</h2>
-      <p>Account information will be displayed here.</p>
-    </div>
+        closeMenu.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            openMenu.style.display = 'block';
+        });
 
-  </div>
-</div>
+        function showTab(id) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            sidebar.classList.remove('active');
+            openMenu.style.display = 'block';
 
-<script>
-    let deviceIdGlobal = null;
-    const sidebar = document.getElementById('sidebar');
-    const openMenu = document.getElementById('openMenu');
-    const closeMenu = document.getElementById('closeMenu');
-    const buttonContainer = document.getElementById('buttonContainer');
-    const templates = [
-    { name: 'I2C', description: 'Giao tiếp I2C cơ bản' },
-    { name: 'LED Blink', description: 'Nhấp nháy LED' },
-    { name: 'UART', description: 'Truyền thông UART' },
-    { name: 'ADC Read', description: 'Đọc ADC' },
-    { name: 'LCD Display', description: 'Hiển thị trên LCD' },
-    { name: 'Button Control', description: 'Điều khiển nút nhấn' }
-  ];
-  openMenu.addEventListener('click', () => {
-    sidebar.classList.add('active');
-    openMenu.style.display = 'none';
-  });
-
-  closeMenu.addEventListener('click', () => {
-    sidebar.classList.remove('active');
-    openMenu.style.display = 'block';
-  });
-
-  function showTab(id) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    sidebar.classList.remove('active');
-    openMenu.style.display = 'block';
-
-    const rightPanel = document.getElementById('rightPanel');
-    if (rightPanel) {
-      rightPanel.style.display = (id === 'home') ? 'flex' : 'none';
-    }
-  }
-
-  
-
-  function renderButtons(filterText = '') {
-    buttonContainer.innerHTML = '';
-    const filtered = templates.filter(t =>
-      t.name.toLowerCase().includes(filterText.toLowerCase())
-    );
-
-    if (filtered.length === 0) {
-      buttonContainer.innerHTML = '<p>No templates found.</p>';
-      return;
-    }
-
-    filtered.forEach(t => {
-      const btn = document.createElement('button');
-      btn.className = 'template-button';
-      btn.innerHTML = `
-        <div>${t.name}</div>
-        <div class="description">${t.description}</div>
-      `;
-      btn.onclick = () => alert('Bạn đã chọn: ' + t.name);
-      buttonContainer.appendChild(btn);
-    });
-  }
-
-  function filterButtons() {
-    const keyword = document.getElementById('searchInput').value;
-    renderButtons(keyword);
-  }
-    
-  function showToast(type, title, text) {
-    Swal.fire({
-      icon: type,
-      title: title,
-      text: text,
-      timer: 2000,
-      timerProgressBar: true,
-      showConfirmButton: false
-    });
-  }
-
-  function showLoading(show) {
-    document.getElementById("loading-overlay").style.display = show ? "flex" : "none";
-  }
-
-  function parseJwt(token) {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      return JSON.parse(jsonPayload);
-    } catch (e) {
-      console.error("Failed to parse JWT:", e);
-      return null;
-    }
-  }
-
-  async function fetchUserInfo() {
-    const token = localStorage.getItem("jwt_token");
-    if (!token) {
-      showToast("error", "Missing Token", "Please log in again.");
-      window.location.href = "/";
-      return;
-    }
-
-    const payload = parseJwt(token);
- 
-    if (!payload || !payload.device_id) {
-      showToast("error", "Invalid Token", "Token format is invalid. Please log in again.");
-      localStorage.removeItem("jwt_token");
-      window.location.href = "/";
-      return;
-    }
-
-    deviceIdGlobal = payload.device_id;
-    checkDeviceStatusPeriodically();  
-       console.log("Parsed payload:", payload);
-console.log("deviceIdGlobal:", deviceIdGlobal);  
-    try {
-      const response = await fetch("/user_info", {
-        method: "GET",
-        headers: {
-          Authorization: "Bearer " + token
+            const rightPanel = document.getElementById('rightPanel');
+            if (rightPanel) {
+                rightPanel.style.display = (id === 'home') ? 'flex' : 'none';
+            }
         }
-      });
 
-      const data = await response.json();
+        function renderButtons(filterText = '') {
+            buttonContainer.innerHTML = '';
+            const filtered = templates.filter(t =>
+                t.name.toLowerCase().includes(filterText.toLowerCase())
+            );
 
-      if (response.status === 200) {
-        document.getElementById("username").textContent = data.username;
-       
-      } else {
-        handleApiError(data);
-        localStorage.removeItem("jwt_token");
-        window.location.href = "/";
-      }
+            if (filtered.length === 0) {
+                buttonContainer.innerHTML = '<p>No templates found.</p>';
+                return;
+            }
+
+            filtered.forEach(t => {
+                const btn = document.createElement('button');
+                btn.className = 'template-button';
+                btn.innerHTML = `
+                    <div>${t.name}</div>
+                    <div class="description">${t.description}</div>
+                `;
+                btn.onclick = () => alert('Bạn đã chọn: ' + t.name);
+                buttonContainer.appendChild(btn);
+            });
+        }
+
+        function filterButtons() {
+            const keyword = document.getElementById('searchInput').value;
+            renderButtons(keyword);
+        }
+            
+        function showToast(type, title, text) {
+            Swal.fire({
+                icon: type,
+                title: title,
+                text: text,
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+        }
+
+        function showLoading(show) {
+            document.getElementById("loading-overlay").style.display = show ? "flex" : "none";
+        }
+
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                console.error("Failed to parse JWT:", e);
+                return null;
+            }
+        }
+
+        function updateUserInfoDisplays() {
+            // Cập nhật tất cả các vị trí hiển thị thông tin user
+            document.getElementById("username-display").textContent = currentUser.username;
+            document.getElementById("profile-username-display").textContent = currentUser.username;
+            document.getElementById("account-username-display").textContent = currentUser.username;
+            document.getElementById("profile-name-display").textContent = currentUser.name;
+            document.getElementById("account-name-display").textContent = currentUser.name;
+            document.getElementById("profile-email-display").textContent = currentUser.email;
+            document.getElementById("account-email-display").textContent = currentUser.email;
+            document.getElementById("account-device-display").textContent = currentUser.device_id;
+        }
+
+        async function fetchUserInfo() {
+            const token = localStorage.getItem("jwt_token");
+            if (!token) {
+                showToast("error", "Missing Token", "Please log in again.");
+                window.location.href = "/";
+                return;
+            }
+
+            const payload = parseJwt(token);
+        
+            if (!payload || !payload.device_id) {
+                showToast("error", "Invalid Token", "Token format is invalid. Please log in again.");
+                localStorage.removeItem("jwt_token");
+                updateStatusDot(false); // Cập nhật trạng thái khi token không hợp lệ
+                window.location.href = "/";
+                return;
+            }
+
+            deviceIdGlobal = payload.device_id;
+            checkDeviceStatusPeriodically();  
+            console.log("Parsed payload:", payload);
+            console.log("deviceIdGlobal:", deviceIdGlobal); 
+             try {
+        const initialStatusRes = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
+        if (initialStatusRes.ok) {
+            const initialStatusData = await initialStatusRes.json();
+            updateStatusDot(initialStatusData.online);
+        }
     } catch (err) {
-      console.error("Error fetching user info:", err);
-      showToast("error", "Network Error", "Unable to fetch user info.");
-    }
-  }
+        console.error("Initial status check failed:", err);
+        updateStatusDot(false);
+    } 
+            
+            try {
+                const response = await fetch("/user_info", {
+                    method: "GET",
+                    headers: {
+                        Authorization: "Bearer " + token
+                    }
+                });
 
-  document.getElementById("logout-btn").addEventListener("click", async () => {
-    const token = localStorage.getItem("jwt_token");
-    if (!token) {
-      window.location.href = "/";
-      return;
-    }
+                const data = await response.json();
 
-    try {
-      const response = await fetch("/logout", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token
+                if (response.status === 200) {
+                    // Cập nhật biến currentUser
+                    currentUser = {
+                        username: data.username || 'N/A',
+                        name: data.name || 'N/A',
+                        email: data.email || 'N/A',
+                        device_id: data.device_id || 'N/A'
+                    };
+                    
+                    // Cập nhật tất cả các vị trí hiển thị
+                    updateUserInfoDisplays();
+                
+                } else {
+                    handleApiError(data);
+                    localStorage.removeItem("jwt_token");
+                     updateStatusDot(false);
+                    window.location.href = "/";
+                }
+            } catch (err) {
+                console.error("Error fetching user info:", err);
+                 updateStatusDot(false);
+                showToast("error", "Network Error", "Unable to fetch user info.");
+                
+            }
         }
-      });
 
-      const data = await response.json();
+        document.getElementById("logout-btn").addEventListener("click", async () => {
+            const token = localStorage.getItem("jwt_token");
+            if (!token) {
+                window.location.href = "/";
+                return;
+            }
 
-      if (response.ok) {
-        localStorage.removeItem("jwt_token");
-        window.location.href = "/";
-      } else {
-        handleApiError(data);
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-      showToast("error", "Logout Failed", "An error occurred during logout.");
-    }
-  });
+            try {
+                const response = await fetch("/logout", {
+                    method: "POST",
+                    headers: {
+                        Authorization: "Bearer " + token
+                    }
+                });
 
-  async function checkDeviceStatusPeriodically() {
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.removeItem("jwt_token");
+                    window.location.href = "/";
+                } else {
+                    handleApiError(data);
+                }
+            } catch (error) {
+                console.error("Logout error:", error);
+                showToast("error", "Logout Failed", "An error occurred during logout.");
+            }
+        });
+
+       async function checkDeviceStatusPeriodically() {
     const token = localStorage.getItem("jwt_token");
     if (!token || !deviceIdGlobal) return;
 
     try {
-      const res = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (!data.online) {
-          await attemptReconnect();
-        } else {
-          console.log("Device is online.");
+        const res = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
+        if (res.ok) {
+            const data = await res.json();
+            updateStatusDot(data.online);
+            
+            if (!data.online) {
+                await attemptReconnect();
+            } else {
+                console.log("Device is online.");
+            }
         }
-      }
     } catch (err) {
-      console.error("Error checking device status:", err);
+        console.error("Error checking device status:", err);
+        updateStatusDot(false); // Nếu có lỗi, coi như offline
     }
 
     setTimeout(checkDeviceStatusPeriodically, 3000);
-  }
+}
 
-  async function attemptReconnect() {
+function updateStatusDot(isOnline) {
+    // Lấy tất cả các phần tử status dot trong trang
+    const statusDots = document.querySelectorAll('.status-dot');
+    
+    statusDots.forEach(dot => {
+        // Xóa class cũ
+        dot.classList.remove('online', 'offline');
+        
+        // Thêm class mới dựa trên trạng thái
+        if (isOnline) {
+            dot.classList.add('online');
+        } else {
+            dot.classList.add('offline');
+        }
+    });
+}
+async function attemptReconnect() {
+    updateStatusDot(false); // Đảm bảo dot màu đỏ khi offline
+    
     const confirmReconnect = await Swal.fire({
-      icon: "warning",
-      title: "Device Offline",
-      text: "Raspberry Pi is currently offline. Do you want to retry?",
-      showCancelButton: true,
-      confirmButtonText: "Reconnect",
-      cancelButtonText: "Logout"
+        icon: "warning",
+        title: "Device Offline",
+        text: "Raspberry Pi is currently offline. Do you want to retry?",
+        showCancelButton: true,
+        confirmButtonText: "Reconnect",
+        cancelButtonText: "Logout"
     });
 
     if (!confirmReconnect.isConfirmed) {
-      await logoutUser();
-      return;
+        await logoutUser();
+        return;
     }
 
     showLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5s
+    await new Promise(resolve => setTimeout(resolve, 5000)); 
 
     try {
-      const reconnectRes = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
-      showLoading(false);
-      if (reconnectRes.ok) {
-        const reconnectData = await reconnectRes.json();
-        if (reconnectData.online) {
-          showToast("success", "Reconnected", "Raspberry Pi is back online.");
-          setTimeout(() => location.reload(), 1500);
+        const reconnectRes = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
+        showLoading(false);
+        if (reconnectRes.ok) {
+            const reconnectData = await reconnectRes.json();
+            updateStatusDot(reconnectData.online);
+            
+            if (reconnectData.online) {
+                showToast("success", "Reconnected", "Raspberry Pi is back online.");
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                await attemptReconnect();
+            }
         } else {
-          await attemptReconnect();
+            await attemptReconnect();
         }
-      } else {
+    } catch (e) {
+        console.error("Reconnect failed:", e);
+        showLoading(false);
         await attemptReconnect();
-      }
-    } catch (e) {
-      console.error("Reconnect failed:", e);
-      showLoading(false);
-      await attemptReconnect();
     }
-  }
+}
 
-  async function logoutUser() {
-    const token = localStorage.getItem("jwt_token");
-    if (!token) {
-      window.location.href = "/";
-      return;
-    }
+        async function logoutUser() {
+            const token = localStorage.getItem("jwt_token");
+            if (!token) {
+                window.location.href = "/";
+                return;
+            }
 
-    try {
-      await fetch("/logout", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token
+            try {
+                await fetch("/logout", {
+                    method: "POST",
+                    headers: {
+                        Authorization: "Bearer " + token
+                    }
+                });
+            } catch (e) {
+                console.error("Logout error:", e);
+            }
+
+            localStorage.removeItem("jwt_token");
+             updateStatusDot(false);
+            window.location.href = "/";
         }
-      });
-    } catch (e) {
-      console.error("Logout error:", e);
-    }
 
-    localStorage.removeItem("jwt_token");
-    window.location.href = "/";
-  }
+        function handleApiError(data) {
+            const code = data?.code;
+            const message = data?.message || "Unknown error";
 
-  function handleApiError(data) {
-    const code = data?.code;
-    const message = data?.message || "Unknown error";
+            switch (code) {
+                case 1001: // MISSING_TOKEN
+                    showToast("error", "Missing Token", message);
+                    break;
+                case 1002: // INVALID_TOKEN_FORMAT
+                    showToast("error", "Invalid Token Format", message);
+                    break;
+                case 1003: // TOKEN_EXPIRED
+                    showToast("error", "Token Expired", message);
+                    break;
+                case 1004: // INVALID_TOKEN
+                    showToast("error", "Invalid Token", message);
+                    break;
+                case 1005: // USER_NOT_FOUND
+                    showToast("error", "User Not Found", message);
+                    break;
+                case 1006: // INTERNAL_ERROR
+                    showToast("error", "Server Error", message);
+                    break;
+                case 1007: // MISSING_DEVICE_ID
+                    showToast("error", "Missing Device ID", message);
+                    break;
+                default:
+                    showToast("error", "Error", message);
+            }
+        }
 
-    switch (code) {
-      case 1001: // MISSING_TOKEN
-        showToast("error", "Missing Token", message);
-        break;
-      case 1002: // INVALID_TOKEN_FORMAT
-        showToast("error", "Invalid Token Format", message);
-        break;
-      case 1003: // TOKEN_EXPIRED
-        showToast("error", "Token Expired", message);
-        break;
-      case 1004: // INVALID_TOKEN
-        showToast("error", "Invalid Token", message);
-        break;
-      case 1005: // USER_NOT_FOUND
-        showToast("error", "User Not Found", message);
-        break;
-      case 1006: // INTERNAL_ERROR
-        showToast("error", "Server Error", message);
-        break;
-      case 1007: // MISSING_DEVICE_ID
-        showToast("error", "Missing Device ID", message);
-        break;
-      default:
-        showToast("error", "Error", message);
-    }
-  }
-  fetchUserInfo();
-  renderButtons();
-</script>
+        // Xử lý reset password
+        document.getElementById('resetPasswordBtn').addEventListener('click', function() {
+            Swal.fire({
+                title: 'Reset Password',
+                text: 'Are you sure you want to reset your password? A reset link will be sent to your email.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, reset it',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Gọi API reset password ở đây
+                    Swal.fire(
+                        'Sent!',
+                        'Password reset link has been sent to your email.',
+                        'success'
+                    );
+                }
+            });
+        });
 
+        // Khởi động ứng dụng
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchUserInfo();
+            renderButtons();
+        });
+    </script>
+</body>
+</html>
