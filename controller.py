@@ -1,4 +1,10 @@
-
+#7/7/2025
+# Lỗi reset password
+#
+#
+#
+#
+#
 from my_log import AppLogger
 from datetime import datetime
 from flask import Flask, send_from_directory, request, jsonify
@@ -45,8 +51,8 @@ def register():
         return jsonify({"code": EC.USERNAME_EXISTS, "message": "Username already exists"}), 400
     elif result == EC.EMAIL_EXISTS:
         return jsonify({"code": EC.EMAIL_EXISTS, "message": "Email already exists"}), 400
-    elif result == EC.INVALID_PASSWORD:
-        return jsonify({"code": EC.INVALID_PASSWORD, "message": "Invalid password format"}), 400
+    elif result == EC.INVALID_PASSWORD_FORMAT:
+        return jsonify({"code": EC.INVALID_PASSWORD_FORMAT, "message": "Invalid password format"}), 400
     else:
         log.error(f"[REGISTER] Unknown error for {username}")
         return jsonify({"code": EC.INTERNAL_ERROR, "message": "Internal server error"}), 500
@@ -73,10 +79,11 @@ def login():
         log.warning(f"[LOGIN] Device assigned to another user: {device_id}")
         return jsonify({"code": EC.DEVICE_ASSIGNED_TO_OTHER, "message": "Device assigned to another user"}), 403
     # Gán device_id nếu user chưa có
-    user_device_id = sql.get_user_device(username)
+    user_device_id = sql.get_user_device(username) # Thiết bị đã gán trước
     if user_device_id is None:
         sql.set_user_device(username, device_id)
     elif user_device_id != device_id:
+         # Nếu đã gán rồi mà khác => mismatch
         log.warning(f"[LOGIN] Device mismatch for {username}")
         return jsonify({"code": EC.DEVICE_MISMATCH, "message": "Device mismatch"}), 403
 
@@ -90,17 +97,21 @@ def login():
 def user_info():
     auth_header = request.headers.get("Authorization")
     if not auth_header:
+        log.error("user_info missed token")
         return jsonify({"code": EC.MISSING_TOKEN, "message": "Missing token"}), 401
 
     try:
         token = auth_header.split(" ")[1]
     except IndexError:
+        log.error("user_info Invalid token format")
         return jsonify({"code": EC.INVALID_TOKEN_FORMAT, "message": "Invalid token format"}), 401
 
     payload = jwt_manager.verify_token(token)
     if payload == "TOKEN_EXPIRED":
+        log.error("user_info Token expired")
         return jsonify({"code": EC.TOKEN_EXPIRED, "message": "Token expired"}), 401
     elif payload == "INVALID_TOKEN":
+        log.error("user_info Invalid token")
         return jsonify({"code": EC.INVALID_TOKEN, "message": "Invalid token"}), 401
 
     username = payload.get("username")
@@ -127,8 +138,41 @@ def forget_password():
         return jsonify({"code": EC.SAME_PASSWORD, "message": "New password cannot be the same as old password"}), 400
     elif result == EC.INVALID_OLD_PASSWORD:
         return jsonify({"code": EC.INVALID_OLD_PASSWORD, "message": "Invalid old password"}), 401
-    elif result == EC.INVALID_PASSWORD:
-        return jsonify({"code": EC.INVALID_PASSWORD, "message": "Invalid password format"}), 400
+    elif result == EC.INVALID_PASSWORD_FORMAT:
+        return jsonify({"code": EC.INVALID_PASSWORD_FORMAT, "message": "Invalid password format"}), 400
+    elif result == EC.INVALID_CREDENTIALS:
+        return jsonify({"code": EC.INVALID_CREDENTIALS, "message": "Invalid credentials"}), 401
+    else:
+        return jsonify({"code": EC.INTERNAL_ERROR, "message": "Server error"}), 500
+
+@app.route('/change_password', methods=['POST'])
+def change_password():
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return jsonify({"code": EC.MISSING_TOKEN, "message": "Missing token"}), 401
+
+    try:
+        token = auth_header.split(" ")[1]
+    except IndexError:
+        return jsonify({"code": EC.INVALID_TOKEN_FORMAT, "message": "Invalid token format"}), 401
+
+    payload = jwt_manager.verify_token(token)
+    if payload == "TOKEN_EXPIRED":
+        return jsonify({"code": EC.TOKEN_EXPIRED, "message": "Token expired"}), 401
+    elif payload == "INVALID_TOKEN":
+        return jsonify({"code": EC.INVALID_TOKEN, "message": "Invalid token"}), 401
+    username = payload.get("username")
+    old_password = request.form.get('old_password')
+    new_password = request.form.get('new_password')
+    result = sql.change_password(username, old_password, new_password)
+    if result == EC.SUCCESS:
+        return jsonify({"code": EC.SUCCESS, "message": "Password changed successfully"}), 200
+    elif result == EC.SAME_PASSWORD:
+        return jsonify({"code": EC.SAME_PASSWORD, "message": "New password cannot be same as old"}), 400
+    elif result == EC.INVALID_PASSWORD_FORMAT:
+        return jsonify({"code": EC.INVALID_PASSWORD_FORMAT, "message": "Invalid password format"}), 400
+    elif result == EC.INVALID_OLD_PASSWORD:
+        return jsonify({"code": EC.INVALID_OLD_PASSWORD, "message": "Invalid old password"}), 401
     elif result == EC.INVALID_CREDENTIALS:
         return jsonify({"code": EC.INVALID_CREDENTIALS, "message": "Invalid credentials"}), 401
     else:

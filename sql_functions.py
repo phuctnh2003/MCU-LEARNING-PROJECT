@@ -1,5 +1,4 @@
 import sqlite3
-import logging
 from my_log import AppLogger
 from datetime import datetime, timedelta
 from function import md5_transmit, is_valid_password
@@ -36,7 +35,7 @@ class SQLFunction:
     def register_user(self, username, name, email, password):
         if not is_valid_password(password):
             log.error("Register invalid password format")
-            return INVALID_PASSWORD
+            return INVALID_PASSWORD_FORMAT
 
         hashed_password = md5_transmit(password)
 
@@ -79,6 +78,7 @@ class SQLFunction:
             if row and row[0] == hashed_password:
                 return SUCCESS
             else:
+                log.error("Login failed")
                 return INVALID_CREDENTIALS
         except Exception as e:
             log(f"Login Error: {e}")
@@ -88,31 +88,83 @@ class SQLFunction:
 
     def forget_password(self, email, old_password, new_password):
         if not is_valid_password(new_password):
-            return INVALID_PASSWORD
+            log.error("Forget Password invalid password format")
+            return INVALID_PASSWORD_FORMAT
 
         hashed_old = md5_transmit(old_password)
         hashed_new = md5_transmit(new_password)
 
         if hashed_old == hashed_new:
+            log.error("Forget Password same password")
             return SAME_PASSWORD
 
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
-            cursor.execute("SELECT id FROM users WHERE email = ? AND password = ?", (email, hashed_old))
-            if cursor.fetchone():
-                cursor.execute("UPDATE users SET password = ? WHERE email = ?", (hashed_new, email))
-                conn.commit()
-                return SUCCESS
-            else:
+            # Kiểm tra người dùng có tồn tại không
+            cursor.execute("SELECT password FROM users WHERE email = ?", (email,))
+            row = cursor.fetchone()
+            if not row:
+                log.error("Forget Password user not found")
                 return INVALID_CREDENTIALS
+
+            stored_password = row[0]
+            if stored_password != hashed_old:
+                log.error("Forget Password invalid old password")
+                return INVALID_OLD_PASSWORD
+
+            cursor.execute("UPDATE users SET password = ? WHERE email = ?", (hashed_new, email))
+            conn.commit()
+            return SUCCESS
+
         except Exception as e:
             log(f"Forgot Password Error: {e}")
             return DB_ERROR
+
         finally:
             conn.close()
 
+    def change_password(self, username, old_password, new_password):
+        if not is_valid_password(new_password):
+            log.error("Change Password invalid password format")
+            return INVALID_PASSWORD_FORMAT
+
+        hashed_old = md5_transmit(old_password)
+        hashed_new = md5_transmit(new_password)
+
+        if hashed_old == hashed_new:
+            log.error("Change Password same password")
+            return SAME_PASSWORD
+
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
+            row = cursor.fetchone()
+            
+            if not row:
+                log.error("Change Password user not found")
+                log.error(row)
+                return INVALID_CREDENTIALS
+
+            stored_password = row[0]
+            if stored_password != hashed_old:
+                log.error("Change Password invalid old password")
+                return INVALID_OLD_PASSWORD  
+
+            cursor.execute("UPDATE users SET password = ? WHERE username  = ?", (hashed_new, username ))
+            conn.commit()
+            return SUCCESS
+
+        except Exception as e:
+            log(f"Change Password Error: {e}")
+            return DB_ERROR
+
+        finally:
+            conn.close()
+           
     def get_user_info(self, username):
         try:
             conn = sqlite3.connect(self.db_path)
@@ -231,10 +283,7 @@ if __name__ == '__main__':
 
     sql = SQLFunction()
     # Example usage
-    
-    for user in sql.show_all_users():
-        print(user)
-   # print(sql.forget_password("kingherotd@gmail.com", "Phuc123@", "Phuc321@"))
-    #print(sql.register_user("phongpt", "Phong", "phong@gmail.com", "Phong123@"))
-    #
-    #print(sql.forget_password("phong@gmail.com", "Phong321@", "Phong123@"))
+
+   # print(sql.register_user("phongpt", "Phong", "phong@gmail.com", "Phong123@"))
+    #print(sql.login_user("phongpt", "Phong123@"))
+ 

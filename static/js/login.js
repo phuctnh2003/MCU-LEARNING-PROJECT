@@ -57,10 +57,10 @@ document.getElementById('signup-btn').addEventListener('click', async () => {
             resetSignupForm();
             loginBtn.click();
             break;
-        case 1001: // USERNAME_EXISTS
+        case 1002: // USERNAME_EXISTS
             showToast("error", "Error", "Username already exists.");
             break;
-        case 1002: // INVALID_PASSWORD
+        case 1206: // INVALID_PASSWORD_FORMAT
             showToast("error", "Error", "Password must contain uppercase, lowercase, number, special character, min 4 characters.");
             break;
         case 1003: // EMAIL_EXISTS
@@ -107,7 +107,7 @@ document.getElementById('login-btn').addEventListener('click', async () => {
         case 2002: // DEVICE_ASSIGNED_TO_OTHER
             showToast("error", "Error", "Device is assigned to another user.");
             break;
-        case 2003: // DEVICE_MISMATCH
+        case 2003: // DEVICE_MISMATCH  
             showToast("error", "Error", "Device mismatch.");
             break;
         default:
@@ -164,7 +164,7 @@ document.getElementById("modal-forget-btn").addEventListener("click", async () =
                 resetForgetPasswordModal();
                 document.getElementById("forget-password-modal").style.display = "none";
                 document.getElementById("modal-backdrop").style.display = "none";
-            }, 2000);
+            }, 500);
             break;
         case 1202: // SAME_PASSWORD
             showToast("error", "Error", "New password cannot be the same as old password.");
@@ -172,11 +172,11 @@ document.getElementById("modal-forget-btn").addEventListener("click", async () =
         case 1207: // INVALID_OLD_PASSWORD
             showToast("error", "Error", "Invalid old password.");
             break;
-        case 1002: // INVALID_PASSWORD
+        case 1206: // INVALID_PASSWORD_FORMAT
             showToast("error", "Error", "Invalid password format.");
             break;
-        case 1003: // INVALID_CREDENTIALS
-            showToast("error", "Error", "Old password is incorrect.");
+        case 1201: // INVALID_CREDENTIALS
+            showToast("error", "Error", "Invalid credentials.");
             break;
         default:
             showToast("error", "Error", "Something went wrong.");

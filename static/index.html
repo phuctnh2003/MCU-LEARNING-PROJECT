@@ -1,467 +1,16 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/css/index.css">
     <link href="https://fonts.googleapis.com/css?family=Fira+Sans" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Giao diện học tập</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      background: #c2bbba;
-      padding: 40px;
-      display: flex;
-      justify-content: center;
-    }
-
-    .main-box {
-      display: flex;
-      border-radius: 20px;
-      background-color: #6B92A4;
-      padding: 20px;
-      min-height: 600px;
-      max-width: 2000px;
-      width: 100%;
-      position: relative;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .sidebar {
-      width: 180px;
-      background-color: #6B92A4;
-      color: white;
-      display: none;
-      flex-direction: column;
-      padding: 20px 10px;
-      border-radius: 20px 0 0 20px;
-    }
-
-    .sidebar.active {
-      display: flex;
-    }
-     .sidebar-item {
-      padding: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 25px;
-      transition: all 0.3s ease;
-      border-radius: 8px;
-    }
-
-    .sidebar-item:hover:not(.disabled) {
-      background-color: #5a7f90;
-      transform: scale(1.05);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .sidebar-item .icon {
-      transition: all 0.3s ease;
-    }
-
-    .sidebar-item:hover .icon {
-      transform: scale(1.1);
-    }
-
-    .menu-button {
-      font-size: 28px;
-      color: white;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 10px;
-      position: absolute;
-      top: 20px;
-      left: 5px;
-      z-index: 2;
-    }
-
-    .menu-close {
-      align-self: flex-end;
-      font-size: 24px;
-      cursor: pointer;
-      margin-bottom: 20px;
-    }
-
-    .sidebar-item {
-      padding: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 25px;
-    }
-
-    .sidebar-item.disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-
-    .sidebar-item:hover:not(.disabled) {
-      background-color: #6B92A4;
-      border-radius: 8px;
-    }
-
-    .content {
-      flex: 1;
-      background: white;
-      border-radius: 16px;
-      padding: 40px;
-      margin-left: 30px;
-      min-height: 500px;
-      width: 100%;
-    }
-
-    .tab {
-      display: none;
-    }
-
-    .tab.active {
-      display: block;
-    }
-
-    .icon {
-      width: 35px;
-      height: 35px;
-      display: inline-block;
-    }
-
-    @media (max-width: 768px) {
-      .main-box {
-        flex-direction: column;
-      }
-
-      .content {
-        margin-left: 0;
-        margin-top: 20px;
-        padding: 20px;
-      }
-
-      .sidebar {
-        border-radius: 20px;
-        width: 100%;
-      }
-
-      .right-panel {
-        margin-left: 0;
-        margin-top: 20px;
-      }
-    }
-
-    #buttonContainer {
-      max-height: 300px;
-      max-width: 1500px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .template-button {
-      border: 2px solid #6B92A4;
-      border-radius: 12px;
-      padding: 16px;
-      background-color: white;
-      box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-      color: #6B92A4;
-      font-weight: bold;
-      font-size: 18px;
-      width: 100%;
-      text-align: left;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .template-button:hover {
-      background-color: #eaf2ff;
-    }
-
-    .template-button .description {
-      font-size: 14px;
-      color: #666;
-      font-weight: normal;
-      margin-top: 6px;
-    }
-
-    .header-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      margin-bottom: 30px;
-      gap: 20px;
-    }
-
-    .header-row h2 {
-      font-size: 35px;
-      color: black;
-      font-weight: bold;
-    }
-
-    .header-row input {
-      padding: 10px 14px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-      max-width: 300px;
-      width: 100%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      transition: border-color 0.2s ease;
-    }
-
-    .header-row input:focus {
-      border-color: #6B92A4;
-      outline: none;
-    }
-
-    .user-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      margin-bottom: 40px;
-    }
-
-    .logo-img {
-      height: 80px;
-    }
-
-    .user-meta {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .user-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid white;
-      padding: 1px;
-      background-color: white;
-    }
-    .username {
-      font-size: 18px;
-      color: black;
-      font-weight: bold;
-    }
-
-    .status-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    .status-dot.online {
-      background-color: #4CAF50;
-    }
-
-    .status-dot.offline {
-      background-color: #f44336;
-    }
-    
-    #loading-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: rgba(0, 0, 0, 0.6);
-      z-index: 9999;
-      justify-content: center;
-      align-items: center;
-      color: white;
-      font-size: 24px;
-      flex-direction: column;
-    }
-    
-    .spinner {
-      border: 6px solid #f3f3f3;
-      border-top: 6px solid #6B92A4;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .account-wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      flex-direction: column;
-      width: 100%;
-      max-width: 1000px;
-      max-height: 350px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    
-    .account-card {
-      background-color: #f8f8f8;
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      width: 100%;
-    }
-    
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      width: 100%;
-    }
-
-    .info-item {
-      background-color: white;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: relative;
-      border: 1px solid #eee;
-    }
-
-    .info-content {
-      flex: 1;
-    }
-
-    .info-label {
-      font-size: 14px;
-      color: #666;
-      margin-bottom: 5px;
-    }
-
-    .info-value {
-      font-size: 18px;
-      color: #000;
-      font-weight: 500;
-    }
-
-    .info-icon {
-      width: 20px;
-      height: 20px;
-      opacity: 0.5;
-      transition: opacity 0.2s;
-      margin-left: 15px;
-    }
-
-    .info-item:hover .info-icon {
-      opacity: 1;
-    }
-
-    @media (max-width: 768px) {
-      .info-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    
-    /* Account Layout */
-    .account-layout {
-      display: flex;
-      gap: 30px;
-    }
-
-    .account-left {
-      width: 250px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .account-right {
-      flex: 1;
-    }
-
-    /* User Profile */
-    .user-profile {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .user-avatar-large {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background-color: #f0f0f0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 15px;
-    }
-
-    .user-avatar-large img {
-      width: 100px;
-      height: 100px;
-    }
-
-    .user-profile h3 {
-      font-size: 18px;
-      color: #333;
-      margin-bottom: 5px;
-    }
-
-    .user-profile p {
-      font-size: 14px;
-      color: #666;
-    }
-
-    /* Reset Password Button */
-    .reset-password-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px;
-      background-color: #6B92A4;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-      margin-bottom: 30px;
-    }
-
-    .reset-password-btn:hover {
-      background-color: #5a7f90;
-    }
-
-    .reset-password-btn img {
-      width: 16px;
-      height: 16px;
-    }
-
-    @media (max-width: 768px) {
-      .account-layout {
-        flex-direction: column;
-      }
-      
-      .account-left {
-        width: 100%;
-        order: 2;
-        margin-top: 30px;
-      }
-      
-      .account-right {
-        order: 1;
-      }
-    }
-  </style>
 </head>
+
 <body>
     <div id="loading-overlay">
         <div class="spinner"></div>
@@ -470,21 +19,20 @@
     <div class="main-box">
         <!-- MENU BUTTON -->
         <button class="menu-button" id="openMenu">☰</button>
-
         <!-- MENU BÊN TRÁI -->
         <div class="sidebar" id="sidebar">
             <div class="menu-close" id="closeMenu">✖</div>
             <div class="sidebar-item" onclick="showTab('home')">
                 <img src="/static/images/ri_dashboard-fill.svg" class="icon" /> Home
             </div>
-            <div class="sidebar-item" onclick="showTab('link')">
-                <img src="/static/images/icon_connected.png" class="icon" /> Connection
+            <div class="sidebar-item" onclick="showTab('connection')">
+                <img src="/static/images/icon_connected.svg" class="icon" sizes="30x40" /> Connection
             </div>
             <div class="sidebar-item" onclick="showTab('account')">
-                <img src="/static/images/account.png" class="icon" sizes="30x40"/> Account
+                <img src="/static/images/account.png" class="icon" sizes="30x40" /> Account
             </div>
             <div class="sidebar-item" id="logout-btn">
-                <img src="/static/images/logout.png" class="icon" sizes="20x20"/> Logout
+                <img src="/static/images/logout.png" class="icon" sizes="20x20" /> Logout
             </div>
         </div>
 
@@ -500,23 +48,52 @@
                         <span class="status-dot online"></span>
                     </div>
                 </div>
-                <div style="max-width: 1500px; width: 100%;"> 
+                <div style="max-width: 1500px; width: 100%;">
                     <div class="header-row">
                         <h2>Templates</h2>
-                        <input type="text" id="searchInput" onkeyup="filterButtons()" placeholder="Search templates..." />
+                        <input type="text" id="searchInput" onkeyup="filterButtons()"
+                            placeholder="Search templates..." />
                     </div>
                     <div id="buttonContainer"></div>
                 </div>
             </div>
 
-            <!-- TAB LINK -->
-            <div id="link" class="tab">
-                <h2>Connection</h2>
-                <p>Connection list will be displayed here.</p>
+            <!-- TAB Connection -->
+            <!-- TAB Connection - Phiên bản nâng cấp -->
+            <div id="connection" class="tab">
+                <div class="connection-header">
+                    <h2>Connecting device</h2>
+
+                </div>
+
+                <div class="device-list">
+                    <div class="device-card">
+                        <div class="device-icon">
+                            <img src="/static/images/raspberry-pi-logo.svg" alt="Raspberry Pi">
+                        </div>
+                        <div class="device-info">
+                            <div class="device-name" id="deviceName"></div>
+                            <div class="device-id">ID: <span id="deviceIdDisplay"></span></div>
+                        </div>
+                        <div class="device-status-container">
+                            <div class="connection-status">
+                                <span class="status-indicator"></span>
+                                <span class="status-text" id="deviceStatusText">Checking...</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="deviceToggle" disabled>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+
+
             </div>
 
             <!-- TAB ACCOUNT -->
-            <div id="account" class="tab">    
+            <div id="account" class="tab">
                 <div class="user-info">
                     <img src="/static/images/Logo-TA.png" class="logo-img" />
                     <div class="user-meta">
@@ -525,31 +102,33 @@
                         <span class="status-dot online"></span>
                     </div>
                 </div>
-                
+
                 <div class="account-wrapper">
                     <div class="account-card">
-                        <h2 style="font-size: 24px; margin-bottom: 20px; color: #333; font-weight: normal;">Personal information</h2>
+                        <h2 style="font-size: 24px; margin-bottom: 20px; color: #333; font-weight: normal;">Personal
+                            information</h2>
                         <p style="font-size: 16px; color: #666; margin-bottom: 30px;">
-                            Manage your personal information, including username, email address where you can be contacted
+                            Manage your personal information, including username, email address where you can be
+                            contacted
                         </p>
-                        
+
                         <div class="account-layout">
                             <!-- Phần bên trái - Logo và nút reset -->
                             <div class="account-left">
                                 <div class="user-profile">
                                     <div class="user-avatar-large">
-                                        <img src="/static/images/user-avatar-100.png" sizes="100x100"/>
+                                        <img src="/static/images/user-avatar-100.png" sizes="100x100" />
                                     </div>
                                     <h3 id="profile-name-display"></h3>
                                     <p id="profile-email-display"></p>
                                 </div>
-                                
+
                                 <button class="reset-password-btn" id="resetPasswordBtn">
-                                    <img src="/static/images/reset-password.png" alt="Reset Password"/>
+                                    <img src="/static/images/reset-password.png" alt="Reset Password" />
                                     Reset Password
                                 </button>
                             </div>
-                            
+
                             <!-- Phần bên phải - Thông tin cá nhân -->
                             <div class="account-right">
                                 <div class="info-grid">
@@ -560,7 +139,7 @@
                                         </div>
                                         <img src="/static/images/username.png" class="info-icon" />
                                     </div>
-                                    
+
                                     <div class="info-item">
                                         <div class="info-content">
                                             <div class="info-label">Name</div>
@@ -568,7 +147,7 @@
                                         </div>
                                         <img src="/static/images/name.png" class="info-icon" />
                                     </div>
-                                    
+
                                     <div class="info-item">
                                         <div class="info-content">
                                             <div class="info-label">Email</div>
@@ -576,13 +155,13 @@
                                         </div>
                                         <img src="/static/images/email.png" class="info-icon" />
                                     </div>
-                                    
+
                                     <div class="info-item">
                                         <div class="info-content">
                                             <div class="info-label">Device ID</div>
                                             <div class="info-value" id="account-device-display"></div>
                                         </div>
-                                        <img src="/static/images/pi.png" class="info-icon"/>
+                                        <img src="/static/images/pi.png" class="info-icon" />
                                     </div>
                                 </div>
                             </div>
@@ -592,7 +171,6 @@
             </div>
         </div>
     </div>
-
     <script>
         let deviceIdGlobal = null;
         let currentUser = {
@@ -613,7 +191,13 @@
             { name: 'LCD Display', description: 'Hiển thị trên LCD' },
             { name: 'Button Control', description: 'Điều khiển nút nhấn' }
         ];
-        
+
+        // Thêm các biến quản lý trạng thái thiết bị
+        const deviceToggle = document.getElementById('deviceToggle1');
+        const deviceStatus = document.getElementById('deviceStatus1');
+        const deviceName = document.querySelector('.device-name');
+        let deviceStatusInterval = null;
+
         openMenu.addEventListener('click', () => {
             sidebar.classList.add('active');
             openMenu.style.display = 'none';
@@ -630,9 +214,98 @@
             sidebar.classList.remove('active');
             openMenu.style.display = 'block';
 
-            const rightPanel = document.getElementById('rightPanel');
-            if (rightPanel) {
-                rightPanel.style.display = (id === 'home') ? 'flex' : 'none';
+            // Quản lý interval kiểm tra trạng thái thiết bị
+            if (id === 'connection') {
+                updateConnectionTab();
+                // Kiểm tra trạng thái mỗi 10 giây khi ở tab connection
+                if (this.connectionInterval) clearInterval(this.connectionInterval);
+                this.connectionInterval = setInterval(updateConnectionTab, 10000);
+            } else {
+                if (this.connectionInterval) {
+                    clearInterval(this.connectionInterval);
+                    this.connectionInterval = null;
+                }
+            }
+        }
+
+        // Hàm bắt đầu kiểm tra trạng thái thiết bị
+        function startDeviceStatusMonitoring() {
+            if (deviceStatusInterval) clearInterval(deviceStatusInterval);
+            checkDeviceStatus(); // Kiểm tra ngay lập tức
+            deviceStatusInterval = setInterval(checkDeviceStatus, 3000); // Kiểm tra mỗi 3 giây
+        }
+
+        // Hàm kiểm tra trạng thái thiết bị
+        async function checkDeviceStatus() {
+            if (!deviceIdGlobal) return;
+
+            try {
+                const res = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    updateDeviceStatusUI(data.online);
+                    updateStatusDot(data.online);
+
+                    if (!data.online) {
+                        await attemptReconnect();
+                    }
+                }
+            } catch (err) {
+                console.error("Error checking device status:", err);
+                updateDeviceStatusUI(false);
+                updateStatusDot(false);
+            }
+        }
+
+        async function updateConnectionTab() {
+            if (!deviceIdGlobal) return;
+
+            // Cập nhật thông tin thiết bị
+            document.getElementById('deviceIdDisplay').textContent = deviceIdGlobal;
+            document.getElementById('deviceName').textContent = currentUser.device_id || 'Raspberry Pi';
+
+            try {
+                // Gọi API kiểm tra trạng thái
+                const res = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const isOnline = data.online;
+
+                    // Cập nhật giao diện
+                    const statusIndicator = document.querySelector('.status-indicator');
+                    const statusText = document.getElementById('deviceStatusText');
+                    const toggle = document.getElementById('deviceToggle');
+
+                    statusIndicator.className = 'status-indicator ' + (isOnline ? 'online' : 'offline');
+                    statusText.textContent = isOnline ? 'Connected' : 'Disconnected';
+                    statusText.style.color = isOnline ? '#2ecc71' : '#e74c3c';
+                    toggle.checked = isOnline;
+                }
+            } catch (error) {
+                console.error("Error updating connection tab:", error);
+                const statusIndicator = document.querySelector('.status-indicator');
+                const statusText = document.getElementById('deviceStatusText');
+
+                statusIndicator.className = 'status-indicator offline';
+                statusText.textContent = 'Mất kết nối';
+                statusText.style.color = '#e74c3c';
+            }
+        }
+
+        // Hàm cập nhật giao diện trạng thái thiết bị
+        function updateDeviceStatusUI(isOnline) {
+            if (deviceToggle && deviceStatus) {
+                // Chỉ cập nhật trạng thái, không cho phép tương tác
+                deviceToggle.checked = isOnline;
+                deviceStatus.textContent = isOnline ? 'Đang kết nối' : 'Mất kết nối';
+                deviceStatus.style.color = isOnline ? '#4CAF50' : '#f44336';
+
+                // Thêm style để làm rõ toggle không thể tương tác
+                const slider = document.querySelector('.slider');
+                if (slider) {
+                    slider.style.cursor = 'not-allowed';
+                    slider.style.opacity = '0.7';
+                }
             }
         }
 
@@ -651,9 +324,9 @@
                 const btn = document.createElement('button');
                 btn.className = 'template-button';
                 btn.innerHTML = `
-                    <div>${t.name}</div>
-                    <div class="description">${t.description}</div>
-                `;
+                <div>${t.name}</div>
+                <div class="description">${t.description}</div>
+            `;
                 btn.onclick = () => alert('Bạn đã chọn: ' + t.name);
                 buttonContainer.appendChild(btn);
             });
@@ -663,7 +336,7 @@
             const keyword = document.getElementById('searchInput').value;
             renderButtons(keyword);
         }
-            
+
         function showToast(type, title, text) {
             Swal.fire({
                 icon: type,
@@ -694,7 +367,6 @@
         }
 
         function updateUserInfoDisplays() {
-            // Cập nhật tất cả các vị trí hiển thị thông tin user
             document.getElementById("username-display").textContent = currentUser.username;
             document.getElementById("profile-username-display").textContent = currentUser.username;
             document.getElementById("account-username-display").textContent = currentUser.username;
@@ -703,8 +375,12 @@
             document.getElementById("profile-email-display").textContent = currentUser.email;
             document.getElementById("account-email-display").textContent = currentUser.email;
             document.getElementById("account-device-display").textContent = currentUser.device_id;
-        }
 
+            // Cập nhật tên thiết bị trong tab connection
+            if (deviceName && currentUser.device_id) {
+                deviceName.textContent = `Device: ${currentUser.device_id}`;
+            }
+        }
         async function fetchUserInfo() {
             const token = localStorage.getItem("jwt_token");
             if (!token) {
@@ -714,30 +390,32 @@
             }
 
             const payload = parseJwt(token);
-        
+
             if (!payload || !payload.device_id) {
                 showToast("error", "Invalid Token", "Token format is invalid. Please log in again.");
                 localStorage.removeItem("jwt_token");
-                updateStatusDot(false); // Cập nhật trạng thái khi token không hợp lệ
+                updateStatusDot(false);
                 window.location.href = "/";
                 return;
             }
 
             deviceIdGlobal = payload.device_id;
-            checkDeviceStatusPeriodically();  
             console.log("Parsed payload:", payload);
-            console.log("deviceIdGlobal:", deviceIdGlobal); 
-             try {
-        const initialStatusRes = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
-        if (initialStatusRes.ok) {
-            const initialStatusData = await initialStatusRes.json();
-            updateStatusDot(initialStatusData.online);
-        }
-    } catch (err) {
-        console.error("Initial status check failed:", err);
-        updateStatusDot(false);
-    } 
-            
+            console.log("deviceIdGlobal:", deviceIdGlobal);
+
+            try {
+                const initialStatusRes = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
+                if (initialStatusRes.ok) {
+                    const initialStatusData = await initialStatusRes.json();
+                    updateStatusDot(initialStatusData.online);
+                    updateDeviceStatusUI(initialStatusData.online);
+                }
+            } catch (err) {
+                console.error("Initial status check failed:", err);
+                updateStatusDot(false);
+                updateConnectionTab();
+            }
+
             try {
                 const response = await fetch("/user_info", {
                     method: "GET",
@@ -749,28 +427,26 @@
                 const data = await response.json();
 
                 if (response.status === 200) {
-                    // Cập nhật biến currentUser
                     currentUser = {
                         username: data.username || 'N/A',
                         name: data.name || 'N/A',
                         email: data.email || 'N/A',
                         device_id: data.device_id || 'N/A'
                     };
-                    
-                    // Cập nhật tất cả các vị trí hiển thị
+
                     updateUserInfoDisplays();
-                
+                    startDeviceStatusMonitoring(); // Bắt đầu kiểm tra trạng thái sau khi có thông tin user
+
                 } else {
                     handleApiError(data);
                     localStorage.removeItem("jwt_token");
-                     updateStatusDot(false);
+                    updateStatusDot(false);
                     window.location.href = "/";
                 }
             } catch (err) {
                 console.error("Error fetching user info:", err);
-                 updateStatusDot(false);
+                updateStatusDot(false);
                 showToast("error", "Network Error", "Unable to fetch user info.");
-                
             }
         }
 
@@ -803,88 +479,58 @@
             }
         });
 
-       async function checkDeviceStatusPeriodically() {
-    const token = localStorage.getItem("jwt_token");
-    if (!token || !deviceIdGlobal) return;
+        function updateStatusDot(isOnline) {
+            const statusDots = document.querySelectorAll('.status-dot');
 
-    try {
-        const res = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
-        if (res.ok) {
-            const data = await res.json();
-            updateStatusDot(data.online);
-            
-            if (!data.online) {
-                await attemptReconnect();
-            } else {
-                console.log("Device is online.");
+            statusDots.forEach(dot => {
+                dot.classList.remove('online', 'offline');
+                dot.classList.add(isOnline ? 'online' : 'offline');
+            });
+        }
+
+        async function attemptReconnect() {
+            updateStatusDot(false);
+            updateDeviceStatusUI(false);
+
+            const confirmReconnect = await Swal.fire({
+                icon: "warning",
+                title: "Device Offline",
+                text: "Raspberry Pi is currently offline. Do you want to retry?",
+                showCancelButton: true,
+                confirmButtonText: "Reconnect",
+                cancelButtonText: "Logout"
+            });
+
+            if (!confirmReconnect.isConfirmed) {
+                await logoutUser();
+                return;
             }
-        }
-    } catch (err) {
-        console.error("Error checking device status:", err);
-        updateStatusDot(false); // Nếu có lỗi, coi như offline
-    }
 
-    setTimeout(checkDeviceStatusPeriodically, 3000);
-}
+            showLoading(true);
+            await new Promise(resolve => setTimeout(resolve, 5000));
 
-function updateStatusDot(isOnline) {
-    // Lấy tất cả các phần tử status dot trong trang
-    const statusDots = document.querySelectorAll('.status-dot');
-    
-    statusDots.forEach(dot => {
-        // Xóa class cũ
-        dot.classList.remove('online', 'offline');
-        
-        // Thêm class mới dựa trên trạng thái
-        if (isOnline) {
-            dot.classList.add('online');
-        } else {
-            dot.classList.add('offline');
-        }
-    });
-}
-async function attemptReconnect() {
-    updateStatusDot(false); // Đảm bảo dot màu đỏ khi offline
-    
-    const confirmReconnect = await Swal.fire({
-        icon: "warning",
-        title: "Device Offline",
-        text: "Raspberry Pi is currently offline. Do you want to retry?",
-        showCancelButton: true,
-        confirmButtonText: "Reconnect",
-        cancelButtonText: "Logout"
-    });
+            try {
+                const reconnectRes = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
+                showLoading(false);
+                if (reconnectRes.ok) {
+                    const reconnectData = await reconnectRes.json();
+                    updateStatusDot(reconnectData.online);
+                    updateDeviceStatusUI(reconnectData.online);
 
-    if (!confirmReconnect.isConfirmed) {
-        await logoutUser();
-        return;
-    }
-
-    showLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 5000)); 
-
-    try {
-        const reconnectRes = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
-        showLoading(false);
-        if (reconnectRes.ok) {
-            const reconnectData = await reconnectRes.json();
-            updateStatusDot(reconnectData.online);
-            
-            if (reconnectData.online) {
-                showToast("success", "Reconnected", "Raspberry Pi is back online.");
-                setTimeout(() => location.reload(), 1500);
-            } else {
+                    if (reconnectData.online) {
+                        showToast("success", "Reconnected", "Raspberry Pi is back online.");
+                    } else {
+                        await attemptReconnect();
+                    }
+                } else {
+                    await attemptReconnect();
+                }
+            } catch (e) {
+                console.error("Reconnect failed:", e);
+                showLoading(false);
                 await attemptReconnect();
             }
-        } else {
-            await attemptReconnect();
         }
-    } catch (e) {
-        console.error("Reconnect failed:", e);
-        showLoading(false);
-        await attemptReconnect();
-    }
-}
 
         async function logoutUser() {
             const token = localStorage.getItem("jwt_token");
@@ -905,7 +551,9 @@ async function attemptReconnect() {
             }
 
             localStorage.removeItem("jwt_token");
-             updateStatusDot(false);
+            updateStatusDot(false);
+            updateDeviceStatusUI(false);
+            stopDeviceStatusMonitoring();
             window.location.href = "/";
         }
 
@@ -914,25 +562,25 @@ async function attemptReconnect() {
             const message = data?.message || "Unknown error";
 
             switch (code) {
-                case 1001: // MISSING_TOKEN
+                case 1203: // MISSING_TOKEN
                     showToast("error", "Missing Token", message);
                     break;
-                case 1002: // INVALID_TOKEN_FORMAT
+                case 1208: // INVALID_TOKEN_FORMAT
                     showToast("error", "Invalid Token Format", message);
                     break;
-                case 1003: // TOKEN_EXPIRED
+                case 1205: // TOKEN_EXPIRED
                     showToast("error", "Token Expired", message);
                     break;
-                case 1004: // INVALID_TOKEN
+                case 1204: // INVALID_TOKEN
                     showToast("error", "Invalid Token", message);
                     break;
-                case 1005: // USER_NOT_FOUND
+                case 1206: // USER_NOT_FOUND
                     showToast("error", "User Not Found", message);
                     break;
-                case 1006: // INTERNAL_ERROR
+                case 1201: // INTERNAL_ERROR
                     showToast("error", "Server Error", message);
                     break;
-                case 1007: // MISSING_DEVICE_ID
+                case 1204: // MISSING_DEVICE_ID
                     showToast("error", "Missing Device ID", message);
                     break;
                 default:
@@ -941,31 +589,72 @@ async function attemptReconnect() {
         }
 
         // Xử lý reset password
-        document.getElementById('resetPasswordBtn').addEventListener('click', function() {
+        document.getElementById('resetPasswordBtn').addEventListener('click', function () {
             Swal.fire({
-                title: 'Reset Password',
-                text: 'Are you sure you want to reset your password? A reset link will be sent to your email.',
-                icon: 'question',
+                title: 'Change Password',
+                html: `
+                <input type="password" id="oldPassword" class="swal2-input" placeholder="Old Password">
+                <input type="password" id="newPassword" class="swal2-input" placeholder="New Password">
+                <label style="display:flex;align-items:center;justify-content:center;margin-top:5px;">
+                    <input type="checkbox" id="showPasswordToggle" style="margin-right:5px;"> Show Passwords
+                </label>
+            `,
+                confirmButtonText: 'Change',
                 showCancelButton: true,
-                confirmButtonText: 'Yes, reset it',
-                cancelButtonText: 'Cancel'
+                focusConfirm: false,
+                didOpen: () => {
+                    document.getElementById('showPasswordToggle').addEventListener('change', function () {
+                        const oldInput = document.getElementById('oldPassword');
+                        const newInput = document.getElementById('newPassword');
+                        const type = this.checked ? 'text' : 'password';
+                        oldInput.type = type;
+                        newInput.type = type;
+                    });
+                },
+                preConfirm: () => {
+                    const oldPass = document.getElementById('oldPassword').value;
+                    const newPass = document.getElementById('newPassword').value;
+
+                    if (!oldPass || !newPass) {
+                        Swal.showValidationMessage('Please fill in both fields');
+                        return false;
+                    }
+
+                    return fetch('/change_password', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('jwt_token'),
+                        },
+                        body: new URLSearchParams({
+                            old_password: oldPass,
+                            new_password: newPass
+                        })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.code === 0) {
+                                return data;
+                            } else {
+                                throw new Error(data.message);
+                            }
+                        })
+                        .catch(error => {
+                            Swal.showValidationMessage(`Request failed: ${error.message}`);
+                        });
+                }
             }).then((result) => {
-                if (result.isConfirmed) {
-                    // Gọi API reset password ở đây
-                    Swal.fire(
-                        'Sent!',
-                        'Password reset link has been sent to your email.',
-                        'success'
-                    );
+                if (result.isConfirmed && result.value) {
+                    Swal.fire('Success', 'Password changed successfully!', 'success');
                 }
             });
         });
 
         // Khởi động ứng dụng
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             fetchUserInfo();
             renderButtons();
         });
     </script>
 </body>
+
 </html>
