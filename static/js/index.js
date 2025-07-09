@@ -2,7 +2,6 @@ let deviceIdGlobal = null;
 let reconnectAttempts = 0;
 let reconnectTimer = null;
 let autoReconnectTimer = null;
-
 let currentUser = {
   username: '',
   name: '',
@@ -21,7 +20,6 @@ const templates = [
   { name: 'LCD Display', description: 'Hiển thị trên LCD' },
   { name: 'Button Control', description: 'Điều khiển nút nhấn' }
 ];
-
 // Thêm các biến quản lý trạng thái thiết bị
 const deviceToggle = document.getElementById('deviceToggle1');
 const deviceStatus = document.getElementById('deviceStatus1');
@@ -57,7 +55,6 @@ function showTab(id) {
     }
   }
 }
-
 // Hàm bắt đầu kiểm tra trạng thái thiết bị
 function startDeviceStatusMonitoring() {
   if (deviceStatusInterval) clearInterval(deviceStatusInterval);
@@ -146,9 +143,13 @@ function updateDeviceStatusUI(isOnline) {
     }
   }
 }
+const homeView = document.getElementById('home');
+const templateDetailView = document.getElementById('template-detail');
+const detailContent = document.getElementById('template-detail-content');
 
 function renderButtons(filterText = '') {
   buttonContainer.innerHTML = '';
+
   const filtered = templates.filter(t =>
     t.name.toLowerCase().includes(filterText.toLowerCase())
   );
@@ -162,10 +163,86 @@ function renderButtons(filterText = '') {
     const btn = document.createElement('button');
     btn.className = 'template-button';
     btn.innerHTML = `
-                <div>${t.name}</div>
-                <div class="description">${t.description}</div>
-            `;
-    btn.onclick = () => alert('Bạn đã chọn: ' + t.name);
+      <div>${t.name}</div>
+      <div class="description">${t.description}</div>
+    `;
+
+    btn.onclick = async () => {
+      homeView.style.display = 'none';
+      templateDetailView.style.display = 'block';
+      document.getElementById('sidebar').classList.add('disabled-tabs');
+      // Hiện loading trong khi chờ tải form
+      detailContent.innerHTML = `<p>Đang tải...</p>`;
+
+      try {
+        const response = await fetch('/static/form.html');
+        if (response.ok) {
+          const html = await response.text();
+          detailContent.innerHTML = `
+        <div class="form-header">
+    <div class="left-header">
+      <img src="/static/images/Logo-TA.png" alt="Logo" class="logo">
+    </div>
+    <div class="right-header">
+      <button id="back-to-home" class="back-button">← Quay lại</button>
+    </div>
+  </div>
+
+        <div class="form-container">${html}</div>
+      `;
+          document.getElementById('interfaceInput').value = t.name;
+          document.getElementById('interfaceDisplay').textContent = t.name;
+          const script = document.createElement('script');
+          script.src = '/static/js/form-script.js';
+          script.onload = () => {
+            // Sau khi script load, gắn sự kiện
+            const addInitBtn = document.getElementById('addInitRowBtn');
+            if (addInitBtn) addInitBtn.addEventListener('click', addInitRow);
+
+            const addFieldBtn = document.getElementById('addFieldRowBtn');
+            if (addFieldBtn) addFieldBtn.addEventListener('click', addFieldRow);
+            if (typeof initFormEvents === 'function') initFormEvents();
+          };
+          document.body.appendChild(script);
+        } else {
+          detailContent.innerHTML = `
+        <div class="form-header">
+    <div class="left-header">
+      <img src="/static/images/Logo-TA.png" alt="Logo" class="logo">
+    </div>
+    <div class="right-header">
+      <button id="back-to-home" class="back-button">← Quay lại</button>
+    </div>
+  </div>
+
+        <p>Lỗi khi tải nội dung form. Vui lòng thử lại.</p>
+      `;
+        }
+      } catch (err) {
+        console.error("Lỗi khi tải form-content.html:", err);
+        detailContent.innerHTML = `
+     <div class="form-header">
+    <div class="left-header">
+      <img src="/static/images/Logo-TA.png" alt="Logo" class="logo">
+    </div>
+    <div class="right-header">
+      <button id="back-to-home" class="back-button">← Quay lại</button>
+    </div>
+  </div>
+      <p>Không thể tải nội dung form.</p>
+    `;
+      }
+
+      // Gắn sự kiện quay lại sau khi nội dung được render
+      const backBtn = document.getElementById('back-to-home');
+      if (backBtn) {
+        backBtn.onclick = () => {
+          location.reload();
+
+        };
+      }
+    };
+
     buttonContainer.appendChild(btn);
   });
 }
@@ -180,7 +257,7 @@ function showToast(type, title, text) {
     icon: type,
     title: title,
     text: text,
-    timer: 2000,
+    timer: 1000,
     timerProgressBar: true,
     showConfirmButton: false
   });
@@ -376,46 +453,6 @@ function resetDeviceMonitor() {
   startDeviceStatusMonitoring();
 }
 
-
-// async function tryReconnect() {
-//   showLoading(true);
-//   await new Promise(resolve => setTimeout(resolve, 3000));
-
-//   try {
-//     const response = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
-//     showLoading(false);
-
-//     if (response.ok) {
-//       const data = await response.json();
-//       updateStatusDot(data.online);
-//       updateDeviceStatusUI(data.online);
-
-//       if (data.online) {
-//         showToast("success", "Reconnected", "Raspberry Pi is back online.");
-//         resetDeviceMonitor(); // Reset timer & interval nếu cần
-//         return false; // Không cần retry nữa
-//       } else {
-//         return true; // Chưa online → cần retry
-//       }
-//     } else {
-//       return true; // Response lỗi → retry
-//     }
-//   } catch (error) {
-//     console.error("Reconnect failed:", error);
-//     showLoading(false);
-//     return true; // Exception → retry
-//   }
-// }
-
-// function startAutoReconnect() {
-//   autoReconnectTimer = setTimeout(async () => {
-//     const shouldRetry = await tryReconnect();
-//     if (shouldRetry) {
-//       handleRetryOrFail();
-//     }
-//   }, 20000);
-// }
-
 async function handleRetryOrFail() {
   reconnectAttempts++;
   showLoading(true);
@@ -472,50 +509,6 @@ function clearTimers() {
   clearTimeout(reconnectTimer);
   clearTimeout(autoReconnectTimer);
 }
-
-// async function attemptReconnect() {
-//   updateStatusDot(false);
-//   updateDeviceStatusUI(false);
-
-//   const confirmReconnect = await Swal.fire({
-//     icon: "warning",
-//     title: "Device Offline",
-//     text: "Raspberry Pi is currently offline. Do you want to retry?",
-//     showCancelButton: true,
-//     confirmButtonText: "Reconnect",
-//     cancelButtonText: "Logout"
-//   });
-
-//   if (!confirmReconnect.isConfirmed) {
-//     await logoutUser();
-//     return;
-//   }
-
-//   showLoading(true);
-//   await new Promise(resolve => setTimeout(resolve, 5000));
-
-//   try {
-//     const reconnectRes = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
-//     showLoading(false);
-//     if (reconnectRes.ok) {
-//       const reconnectData = await reconnectRes.json();
-//       updateStatusDot(reconnectData.online);
-//       updateDeviceStatusUI(reconnectData.online);
-
-//       if (reconnectData.online) {
-//         showToast("success", "Reconnected", "Raspberry Pi is back online.");
-//       } else {
-//         await attemptReconnect();
-//       }
-//     } else {
-//       await attemptReconnect();
-//     }
-//   } catch (e) {
-//     console.error("Reconnect failed:", e);
-//     showLoading(false);
-//     await attemptReconnect();
-//   }
-// }
 
 async function logoutUser() {
   isReconnecting = false;

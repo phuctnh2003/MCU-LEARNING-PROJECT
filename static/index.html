@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <title>Giao diện học tập</title>
+    <title>Web Control Raspberry Pi</title>
 </head>
 
 <body>
@@ -57,9 +57,15 @@
                     <div id="buttonContainer"></div>
                 </div>
             </div>
+            <!-- Template Detail -->
+            <div id="template-detail" class="tab-content" style="display: none;">
+                <div class="content" id="template-detail-content">
+                    <button id="back-to-list">← Quay lại</button>
+
+                </div>
+            </div>
 
             <!-- TAB Connection -->
-            <!-- TAB Connection - Phiên bản nâng cấp -->
             <div id="connection" class="tab">
                 <div class="connection-header">
                     <h2>Connecting device</h2>
@@ -87,11 +93,7 @@
                         </div>
                     </div>
                 </div>
-
-
-
             </div>
-
             <!-- TAB ACCOUNT -->
             <div id="account" class="tab">
                 <div class="user-info">

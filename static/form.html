@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/static/css/form.css">
+</head>
+
+<body>
+  <h2>Form cấu hình cảm biến</h2>
+  <form id="sensorForm">
+    <fieldset>
+      <legend>Thông tin chung</legend>
+      <label>Tên cảm biến:
+        <input type="text" name="name" required>
+      </label>
+      <label>Giao tiếp:
+        <span id="interfaceDisplay">(chưa chọn)</span>
+        <input type="hidden" name="interface" id="interfaceInput" required>
+      </label>
+      <label>Tần suất lấy mẫu (ms):
+        <input type="number" name="polling_interval_ms" required>
+      </label>
+    </fieldset>
+
+    <fieldset id="i2cFields" class="hidden">
+      <legend>Thông số I2C</legend>
+      <label>Địa chỉ I2C (VD: 0x57):
+        <input type="text" name="address">
+      </label>
+      <label>Thanh ghi bắt đầu đọc (VD: 0x07):
+        <input type="text" name="read_register">
+      </label>
+      <label>Số byte cần đọc:
+        <input type="number" name="read_length">
+      </label>
+    </fieldset>
+
+    <fieldset id="uartFields" class="hidden">
+      <legend>Thông số UART</legend>
+      <label>Cổng UART:
+        <input type="text" name="port">
+      </label>
+      <label>Baudrate:
+        <input type="number" name="baudrate">
+      </label>
+      <label>Kiểu dữ liệu:
+        <select name="parse">
+          <option value="ascii">ASCII</option>
+          <option value="nmea">NMEA</option>
+          <option value="binary">Binary</option>
+        </select>
+      </label>
+    </fieldset>
+
+    <fieldset id="spiFields" class="hidden">
+      <legend>Thông số SPI</legend>
+      <label>Bus SPI:
+        <input type="number" name="bus">
+      </label>
+      <label>Thiết bị (CE#):
+        <input type="number" name="device">
+      </label>
+      <label>Lệnh đọc (VD: 0x01, 0x80, 0x00):
+        <input type="text" name="read_command">
+      </label>
+      <label>Số byte cần đọc:
+        <input type="number" name="read_length_spi">
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Init Sequence (khởi tạo - tuỳ chọn)</legend>
+      <table id="initTable">
+        <thead>
+          <tr>
+            <th>Register</th>
+            <th>Value</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" id="addInitRowBtn">+ Thêm dòng</button>
+    </fieldset>
+
+    <fieldset>
+      <legend>Fields (dữ liệu trả về)</legend>
+      <table id="fieldTable">
+        <thead>
+          <tr>
+            <th>Tên</th>
+            <th>Start (hex hoặc dec)</th>
+            <th>Length</th>
+            <th>Signed</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" id="addFieldRowBtn">+ Thêm trường</button>
+    </fieldset>
+
+    <button type="submit">Tạo JSON</button>
+    <button type="button" onclick="downloadJson()">Tải JSON về</button>
+  </form>
+
+  <pre id="output"></pre>
+
+  <script src="/static/js/form-script.js"></script>
+</body>
+
+</html>

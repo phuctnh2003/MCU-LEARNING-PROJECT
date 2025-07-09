@@ -675,3 +675,62 @@ body {
     opacity: 1;
     transform: translateY(0);
 }
+
+.back-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.back-button:hover {
+    background-color: #2980b9;
+}
+
+.content-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+#sidebar.disabled-tabs .sidebar-item:not(#logout-btn) {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: white;
+    /* Đảm bảo nền trắng */
+    border-bottom: 1px solid #eee;
+    /* Nhẹ nhàng chia phần header và form */
+}
+
+.logo {
+    height: 64px;
+    /* To hơn */
+    max-width: 240px;
+    object-fit: contain;
+}
+
+.back-button {
+    padding: 10px 18px;
+    background-color: #004b8d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background-color 0.3s;
+}
+
+.back-button:hover {
+    background-color: #0066cc;
+}

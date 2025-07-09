@@ -1,10 +1,3 @@
-#7/7/2025
-# Lỗi reset password
-#
-#
-#
-#
-#
 from my_log import AppLogger
 from datetime import datetime
 from flask import Flask, send_from_directory, request, jsonify
