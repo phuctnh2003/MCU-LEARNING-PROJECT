@@ -4,6 +4,7 @@ from flask import Flask, send_from_directory, request, jsonify
 from sql_functions import SQLFunction
 from jwt_manager import JWTManager
 import error_codes as EC
+import json
 
 log = AppLogger()
 
@@ -11,9 +12,22 @@ app = Flask(__name__)
 sql = SQLFunction()
 jwt_manager = JWTManager(secret_key="phuctnh")
 
+
 @app.route('/')
 def serve_html():
     return send_from_directory('static', 'login.html')
+
+@app.route('/receive_data', methods=['POST'])
+def receive_config():
+    data = request.get_json()
+    print("[RECEIVE_DATA] " + json.dumps(data, ensure_ascii=False))
+    log.info("[RECEIVE_DATA] " + json.dumps(data, ensure_ascii=False))
+    # (Xử lý tùy ý ở đây, ví dụ lưu vào file, kiểm tra, phản hồi...)
+    return jsonify({
+        "status": "success",
+        "message": "Cấu hình đã nhận.",
+        "received": data
+    }), 200
 
 @app.route('/heartbeat', methods=['POST'])
 def heartbeat():
@@ -62,7 +76,7 @@ def login():
         return jsonify({"code": EC.INVALID_CREDENTIALS, "message": "Invalid credentials"}), 401
     # Xoá các device không online khỏi user
     sql.cleanup_stale_devices()
-    # Tìm device online trong 30s gần nhất
+    # Tìm device online trong 20s gần nhất
     device_id = sql.get_online_device()
     if not device_id:
         log.warning(f"[LOGIN] No device online for {username}")
@@ -207,6 +221,38 @@ def check_device_status():
     is_online = sql.is_device_online(device_id)
     log.info(f"[DEVICE_STATUS] Device {device_id} online: {is_online}")
     return jsonify({"online": is_online, "code": EC.SUCCESS}), 200
+
+@app.route('/device_info_by_username', methods=['GET'])
+def device_info_by_username():
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return jsonify({"code": EC.MISSING_TOKEN, "message": "Missing token"}), 401
+
+    try:
+        token = auth_header.split(" ")[1]
+    except IndexError:
+        return jsonify({"code": EC.INVALID_TOKEN_FORMAT, "message": "Invalid token format"}), 401
+
+    payload = jwt_manager.verify_token(token)
+    if payload == "TOKEN_EXPIRED":
+        return jsonify({"code": EC.TOKEN_EXPIRED, "message": "Token expired"}), 401
+    elif payload == "INVALID_TOKEN":
+        return jsonify({"code": EC.INVALID_TOKEN, "message": "Invalid token"}), 401
+
+    username = payload.get("username")
+    if not username:
+        return jsonify({"code": EC.INVALID_TOKEN, "message": "Invalid token payload"}), 401
+
+    device_info = sql.get_device_info_by_username(username)
+    if device_info is None:
+        log.warning(f"[DEVICE_INFO] No device info for username: {username}")
+        return jsonify({"code": EC.DEVICE_NOT_FOUND, "message": "Device not found"}), 404
+    elif device_info == EC.DB_ERROR:
+        log.error(f"[DEVICE_INFO] DB error for username: {username}")
+        return jsonify({"code": EC.INTERNAL_ERROR, "message": "Database error"}), 500
+
+    return jsonify({"code": EC.SUCCESS, "data": device_info}), 200
+
 
 @app.route('/index')
 def index():

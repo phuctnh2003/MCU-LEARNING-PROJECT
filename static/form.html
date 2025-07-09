@@ -17,10 +17,27 @@
       <label>Giao tiếp:
         <span id="interfaceDisplay">(chưa chọn)</span>
         <input type="hidden" name="interface" id="interfaceInput" required>
+        <div style="margin-top: 12px;">
+          <label>Địa chỉ I2C (VD: 0x57):
+            <input type="text" name="address">
+          </label>
+          <label>Thanh ghi bắt đầu đọc (VD: 0x07):
+            <input type="text" name="read_register">
+          </label>
+          <label>Số byte cần đọc:
+            <input type="number" name="read_length">
+          </label>
+        </div>
+      </label>
       </label>
       <label>Tần suất lấy mẫu (ms):
         <input type="number" name="polling_interval_ms" required>
       </label>
+      <label>Số mẫu đọc (sample_count):
+        <input type="number" name="sample_count" min="1" placeholder="10">
+      </label>
+
+
     </fieldset>
 
     <fieldset id="i2cFields" class="hidden">

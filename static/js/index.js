@@ -1,4 +1,3 @@
-let deviceIdGlobal = null;
 let reconnectAttempts = 0;
 let reconnectTimer = null;
 let autoReconnectTimer = null;
@@ -13,7 +12,7 @@ const openMenu = document.getElementById('openMenu');
 const closeMenu = document.getElementById('closeMenu');
 const buttonContainer = document.getElementById('buttonContainer');
 const templates = [
-  { name: 'I2C', description: 'Giao tiếp I2C cơ bản' },
+  { name: 'i2c', description: 'Giao tiếp I2C cơ bản' },
   { name: 'LED Blink', description: 'Nhấp nháy LED' },
   { name: 'UART', description: 'Truyền thông UART' },
   { name: 'ADC Read', description: 'Đọc ADC' },
@@ -93,28 +92,62 @@ async function checkDeviceStatus() {
 }
 
 async function updateConnectionTab() {
-  if (!deviceIdGlobal) return;
-
-  // Cập nhật thông tin thiết bị
-  document.getElementById('deviceIdDisplay').textContent = deviceIdGlobal;
-  document.getElementById('deviceName').textContent = currentUser.device_id || 'Raspberry Pi';
-
   try {
-    // Gọi API kiểm tra trạng thái
-    const res = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
-    if (res.ok) {
-      const data = await res.json();
-      const isOnline = data.online;
+    // Gọi API lấy thông tin thiết bị bằng username
+    const token = localStorage.getItem("jwt_token");
+    const response = await fetch("/device_info_by_username", {
+      method: "GET",
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
 
-      // Cập nhật giao diện
-      const statusIndicator = document.querySelector('.status-indicator');
-      const statusText = document.getElementById('deviceStatusText');
-      const toggle = document.getElementById('deviceToggle');
+    if (response.ok) {
+      const data = await response.json();
+      if (data.code === 0 && data.data) {
+        const deviceInfo = data.data;
+        if (deviceInfo.device_ip) {
+          localStorage.setItem("raspberry_ip", deviceInfo.device_ip);
+        }
+        // Cập nhật thông tin thiết bị
+        document.getElementById('deviceIdDisplay').textContent = deviceInfo.device_ip || 'N/A';
+        document.getElementById('deviceName').textContent = currentUser.device_id || 'Raspberry Pi';
 
-      statusIndicator.className = 'status-indicator ' + (isOnline ? 'online' : 'offline');
-      statusText.textContent = isOnline ? 'Connected' : 'Disconnected';
-      statusText.style.color = isOnline ? '#2ecc71' : '#e74c3c';
-      toggle.checked = isOnline;
+        // Thêm last seen nếu có
+        if (deviceInfo.last_seen) {
+          const lastSeenElement = document.createElement('div');
+          lastSeenElement.className = 'device-last-seen';
+          lastSeenElement.textContent = `Last seen: ${formatLastSeen(deviceInfo.last_seen)}`;
+
+          // Kiểm tra nếu đã có last seen thì cập nhật, không thì thêm mới
+          const existingLastSeen = document.querySelector('.device-last-seen');
+          if (existingLastSeen) {
+            existingLastSeen.textContent = lastSeenElement.textContent;
+          } else {
+            document.querySelector('.device-info').appendChild(lastSeenElement);
+          }
+        }
+
+        // Kiểm tra trạng thái kết nối
+        const statusRes = await fetch(`/check_device_status?device_id=${deviceInfo.device_id}`);
+        if (statusRes.ok) {
+          const statusData = await statusRes.json();
+          const isOnline = statusData.online;
+
+          // Cập nhật giao diện
+          const statusIndicator = document.querySelector('.status-indicator');
+          const statusText = document.getElementById('deviceStatusText');
+          const toggle = document.getElementById('deviceToggle');
+
+          statusIndicator.className = 'status-indicator ' + (isOnline ? 'online' : 'offline');
+          statusText.textContent = isOnline ? 'Connected' : 'Disconnected';
+          statusText.style.color = isOnline ? '#2ecc71' : '#e74c3c';
+          toggle.checked = isOnline;
+        }
+      }
+    } else {
+      const errorData = await response.json();
+      handleApiError(errorData);
     }
   } catch (error) {
     console.error("Error updating connection tab:", error);
@@ -126,6 +159,30 @@ async function updateConnectionTab() {
     statusText.style.color = '#e74c3c';
   }
 }
+
+// Hàm định dạng last seen
+function formatLastSeen(isoTimestamp) {
+  const lastSeenDate = new Date(isoTimestamp);
+  const now = new Date();
+  const diffMs = now - lastSeenDate;
+
+  const seconds = Math.floor(diffMs / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (seconds < 60) return 'Just now';
+  if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+
+  // Fallback to full date
+  return lastSeenDate.toLocaleString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
 
 // Hàm cập nhật giao diện trạng thái thiết bị
 function updateDeviceStatusUI(isOnline) {
@@ -192,6 +249,7 @@ function renderButtons(filterText = '') {
       `;
           document.getElementById('interfaceInput').value = t.name;
           document.getElementById('interfaceDisplay').textContent = t.name;
+          console.log(t.name.toLowerCase)
           const script = document.createElement('script');
           script.src = '/static/js/form-script.js';
           script.onload = () => {
@@ -350,6 +408,7 @@ async function fetchUserInfo() {
       };
 
       updateUserInfoDisplays();
+      await updateConnectionTab();
       startDeviceStatusMonitoring(); // Bắt đầu kiểm tra trạng thái sau khi có thông tin user
 
     } else {
@@ -561,6 +620,9 @@ function handleApiError(data) {
       break;
     case 1204: // MISSING_DEVICE_ID
       showToast("error", "Missing Device ID", message);
+      break;
+    case 1005: // DEVICE_ID_NOT_FOUND
+      showToast("error", "Device ID not found")
       break;
     default:
       showToast("error", "Error", message);

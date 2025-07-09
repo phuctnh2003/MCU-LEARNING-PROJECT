@@ -26,12 +26,23 @@ class SQLFunction:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS devices (
                     device_id TEXT PRIMARY KEY,
-                    last_seen DATETIME
+                    last_seen DATETIME,
+                    device_ip TEXT
                 )
             """)
             conn.commit()
 
-   
+    def reset_database(self):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("DROP TABLE IF EXISTS users")
+            cursor.execute("DROP TABLE IF EXISTS devices")
+            conn.commit()
+            log.info("Database reset: all tables dropped.")
+            self._init_db()  # Tạo lại bảng
+        finally:
+            conn.close()   
     def register_user(self, username, name, email, password):
         if not is_valid_password(password):
             log.error("Register invalid password format")
@@ -191,6 +202,61 @@ class SQLFunction:
             conn.close()
 
     # Các hàm quản lý thiết bị 
+    def add_device(self, device_id, device_ip):
+        try:
+            now = datetime.utcnow().isoformat()
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT device_id FROM devices WHERE device_id = ?", (device_id,))
+            if cursor.fetchone():
+                cursor.execute("UPDATE devices SET last_seen = ?, device_ip = ? WHERE device_id = ?",
+                            (now, device_ip, device_id))
+            else:
+                cursor.execute("INSERT INTO devices (device_id, last_seen, device_ip) VALUES (?, ?, ?)",
+                            (device_id, now, device_ip))
+            conn.commit()
+            log.info(f"[ADD_DEVICE] Device {device_id} added/updated successfully.")
+            return SUCCESS
+        except Exception as e:
+            log(f"[ADD_DEVICE] Error: {e}")
+            return DB_ERROR
+        finally:
+            conn.close()
+
+    def get_device_info_by_username(self, username):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            # Tìm device_id dựa theo username
+            cursor.execute("SELECT device_id FROM users WHERE username = ?", (username,))
+            row = cursor.fetchone()
+            if not row or not row[0]:
+                log.warning(f"[GET_DEVICE_INFO] No device assigned to username '{username}'")
+                return None
+
+            device_id = row[0]
+
+            # Lấy thông tin thiết bị từ device_id
+            cursor.execute("SELECT device_ip, last_seen FROM devices WHERE device_id = ?", (device_id,))
+            device_info = cursor.fetchone()
+
+            if device_info:
+                return {
+                    "device_id": device_id,
+                    "device_ip": device_info[0],
+                    "last_seen": device_info[1]
+                }
+            else:
+                log.warning(f"[GET_DEVICE_INFO] Device {device_id} not found in devices table")
+                return None
+        except Exception as e:
+            log(f"[GET_DEVICE_INFO] Error: {e}")
+            return DB_ERROR
+        finally:
+            conn.close()
+
     def upsert_device(self, device_id, last_seen):
         try:
             conn = sqlite3.connect(self.db_path)
@@ -200,7 +266,7 @@ class SQLFunction:
             if cursor.fetchone():
                 cursor.execute("UPDATE devices SET last_seen = ? WHERE device_id = ?", (last_seen, device_id))
             else:
-                cursor.execute("INSERT INTO devices (device_id, last_seen) VALUES (?, ?)", (device_id, last_seen))
+                cursor.execute("INSERT INTO devices (device_id, last_seen) VALUES (?, ?, ?)", (device_id, last_seen))
             conn.commit()
         except Exception as e:
             log(f"Upsert Device Error: {e}")
@@ -211,7 +277,7 @@ class SQLFunction:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            threshold = datetime.utcnow() - timedelta(seconds=30)
+            threshold = datetime.utcnow() - timedelta(seconds=20)
             cursor.execute("SELECT device_id FROM devices WHERE last_seen >= ?", (threshold.isoformat(),))
             row = cursor.fetchone()
             return row[0] if row else None
@@ -283,7 +349,8 @@ if __name__ == '__main__':
 
     sql = SQLFunction()
     # Example usage
-
+    # sql.reset_database()
+    # sql.add_device("raspberry-01","100.78.240.100")
    # print(sql.register_user("phongpt", "Phong", "phong@gmail.com", "Phong123@"))
     #print(sql.login_user("phongpt", "Phong123@"))
  

@@ -612,6 +612,22 @@ body {
     color: #7f8c8d;
 }
 
+.device-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.device-last-seen {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+
 .device-status-container {
     display: flex;
     align-items: center;

@@ -42,6 +42,7 @@ function initFormEvents() {
             const json = {
                 name: form.get("name"),
                 interface: form.get("interface"),
+                sample_count: parseInt(form.get("sample_count")) || 10,
                 polling_interval_ms: parseInt(form.get("polling_interval_ms")),
                 init_sequence: [],
                 fields: []
@@ -76,7 +77,29 @@ function initFormEvents() {
                 if (name) json.fields.push({ name, start, length: parseInt(length), signed });
             });
 
-            document.getElementById("output").textContent = JSON.stringify(json, null, 2);
+            const output = document.getElementById("output");
+            output.textContent = JSON.stringify(json, null, 2); // hiển thị trước
+            const raspIP = localStorage.getItem("raspberry_ip") || "127.0.0.1";
+            console.log(raspIP)
+            fetch(`http://${raspIP}:5000/config`, {
+
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(json)
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error("Lỗi khi gửi dữ liệu!");
+                    return response.json();
+                })
+                .then(data => {
+                    output.textContent += "\n\n✅ Gửi thành công:\n" + JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    output.textContent += "\n\n❌ Gửi thất bại:\n" + error.message;
+                });
+
         });
     }
 
