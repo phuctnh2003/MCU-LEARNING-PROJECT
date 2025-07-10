@@ -43,10 +43,11 @@ body {
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 25px;
+    gap: 8px;
+    font-size: 20px;
     transition: all 0.3s ease;
     border-radius: 8px;
+    white-space: nowrap;
 }
 
 .sidebar-item:hover:not(.disabled) {
@@ -56,6 +57,9 @@ body {
 }
 
 .sidebar-item .icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
     transition: all 0.3s ease;
 }
 
@@ -738,7 +742,7 @@ body {
 
 .back-button {
     padding: 10px 18px;
-    background-color: #004b8d;
+    background-color: #6B92A4;
     color: white;
     border: none;
     border-radius: 8px;
@@ -748,5 +752,5 @@ body {
 }
 
 .back-button:hover {
-    background-color: #0066cc;
+    background-color: #547a8c;
 }

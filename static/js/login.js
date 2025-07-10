@@ -39,7 +39,7 @@ document.getElementById('signup-btn').addEventListener('click', async () => {
     const password = document.getElementById('signup-password').value;
 
     if (!username || !name || !email || !password) {
-        showToast("error", "Error", "Please fill in all fields.");
+        showToast("error", "Lỗi", "Vui lòng điền đầy đủ các trường.");
         return;
     }
 
@@ -52,22 +52,22 @@ document.getElementById('signup-btn').addEventListener('click', async () => {
     const data = await response.json();
 
     switch (data.code) {
-        case 0: // SUCCESS
-            showToast("success", "Success", "Sign up successful!");
+        case 0:
+            showToast("success", "Thành công", "Đăng ký thành công");
             resetSignupForm();
             loginBtn.click();
             break;
-        case 1002: // USERNAME_EXISTS
-            showToast("error", "Error", "Username already exists.");
+        case 1002:
+            showToast("error", "Lỗi", "Tên người dùng đã tồn tại");
             break;
-        case 1206: // INVALID_PASSWORD_FORMAT
-            showToast("error", "Error", "Password must contain uppercase, lowercase, number, special character, min 4 characters.");
+        case 1206:
+            showToast("error", "Lỗi", "Mật khẩu phải có chữ hoa, chữ thường, số, ký tự đặc biệt, tối thiểu 4 ký tự");
             break;
-        case 1003: // EMAIL_EXISTS
-            showToast("error", "Error", "Email already exists.");
+        case 1003:
+            showToast("error", "Lỗi", "Email đã tồn tại");
             break;
         default:
-            showToast("error", "Error", "Sign up failed, please try again.");
+            showToast("error", "Lỗi", "Đăng ký thất bại, vui lòng thử lại");
     }
 });
 
@@ -77,7 +77,7 @@ document.getElementById('login-btn').addEventListener('click', async () => {
     const password = document.getElementById('login-password').value;
 
     if (!username || !password) {
-        showToast("error", "Error", "Please enter username and password.");
+        showToast("error", "Lỗi", "Vui lòng nhập tên đăng nhập và mật khẩu");
         return;
     }
 
@@ -90,28 +90,28 @@ document.getElementById('login-btn').addEventListener('click', async () => {
     const data = await response.json();
 
     switch (data.code) {
-        case 0: // SUCCESS
+        case 0:
             localStorage.setItem("jwt_token", data.token);
             resetLoginForm();
-            showToast("success", "Success", "Login successful!");
+            showToast("success", "Thành công", "Đăng nhập thành công!");
             setTimeout(() => {
                 window.location.href = "index";
             }, 2000);
             break;
-        case 1201: // INVALID_CREDENTIALS
-            showToast("error", "Error", "Invalid username or password.");
+        case 1201:
+            showToast("error", "Lỗi", "Tên đăng nhập hoặc mật khẩu không đúng");
             break;
-        case 2001: // NO_DEVICE_ONLINE
-            showToast("error", "Error", "No Raspberry Pi is online.");
+        case 2001:
+            showToast("error", "Lỗi", "Không có thiết bị nào đang hoạt động");
             break;
-        case 2002: // DEVICE_ASSIGNED_TO_OTHER
-            showToast("error", "Error", "Device is assigned to another user.");
+        case 2002:
+            showToast("error", "Lỗi", "Thiết bị đang được người khác sử dụng");
             break;
-        case 2003: // DEVICE_MISMATCH  
-            showToast("error", "Error", "Device mismatch.");
+        case 2003:
+            showToast("error", "Lỗi", "Thiết bị không khớp");
             break;
         default:
-            showToast("error", "Error", "Login failed, please try again.");
+            showToast("error", "Lỗi", "Đăng nhập thất bại, vui lòng thử lại");
     }
 });
 
@@ -145,7 +145,7 @@ document.getElementById("modal-forget-btn").addEventListener("click", async () =
     const newPassword = document.getElementById("modal-forget-new-password").value;
 
     if (!email || !oldPassword || !newPassword) {
-        showToast("error", "Error", "Please fill in all fields.");
+        showToast("error", "Lỗi", "Vui lòng điền đầy đủ các trường");
         return;
     }
 
@@ -158,28 +158,28 @@ document.getElementById("modal-forget-btn").addEventListener("click", async () =
     const data = await response.json();
 
     switch (data.code) {
-        case 0: // SUCCESS
-            showToast("success", "Success", "Password changed successfully.");
+        case 0:
+            showToast("success", "Thành công", "Đổi mật khẩu thành công");
             setTimeout(() => {
                 resetForgetPasswordModal();
                 document.getElementById("forget-password-modal").style.display = "none";
                 document.getElementById("modal-backdrop").style.display = "none";
-            }, 500);
+            }, 1000);
             break;
-        case 1202: // SAME_PASSWORD
-            showToast("error", "Error", "New password cannot be the same as old password.");
+        case 1202:
+            showToast("error", "Lỗi", "Mật khẩu mới không được trùng với mật khẩu cũ");
             break;
-        case 1207: // INVALID_OLD_PASSWORD
-            showToast("error", "Error", "Invalid old password.");
+        case 1207:
+            showToast("error", "Lỗi", "Mật khẩu cũ không chính xác");
             break;
-        case 1206: // INVALID_PASSWORD_FORMAT
-            showToast("error", "Error", "Invalid password format.");
+        case 1206:
+            showToast("error", "Lỗi", "Định dạng mật khẩu không hợp lệ");
             break;
-        case 1201: // INVALID_CREDENTIALS
-            showToast("error", "Error", "Invalid credentials.");
+        case 1201:
+            showToast("error", "Lỗi", "Thông tin đăng nhập không hợp lệ");
             break;
         default:
-            showToast("error", "Error", "Something went wrong.");
+            showToast("error", "Lỗi", "Đã xảy ra lỗi");
     }
 });
 
@@ -228,13 +228,13 @@ function resetForgetPasswordModal() {
     document.getElementById("modal-forget-new-password").type = "password";
 }
 
-// Hàm show Swal với timer
+// Hàm hiển thị thông báo ngắn
 function showToast(type, title, text) {
     Swal.fire({
         icon: type,
         title: title,
         text: text,
-        timer: 2000,
+        timer: 1000,
         timerProgressBar: true,
         showConfirmButton: false
     });

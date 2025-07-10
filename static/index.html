@@ -8,37 +8,37 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <title>Web Control Raspberry Pi</title>
+    <title>Trang chủ</title>
 </head>
 
 <body>
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <div>Trying to reconnect...</div>
+        <div>Đang cố gắng kết nối lại...</div>
     </div>
     <div class="main-box">
-        <!-- MENU BUTTON -->
+        <!-- NÚT MENU -->
         <button class="menu-button" id="openMenu">☰</button>
         <!-- MENU BÊN TRÁI -->
         <div class="sidebar" id="sidebar">
             <div class="menu-close" id="closeMenu">✖</div>
             <div class="sidebar-item" onclick="showTab('home')">
-                <img src="/static/images/ri_dashboard-fill.svg" class="icon" /> Home
+                <img src="/static/images/ri_dashboard-fill.svg" class="icon" /> Trang chủ
             </div>
             <div class="sidebar-item" onclick="showTab('connection')">
-                <img src="/static/images/icon_connected.svg" class="icon" sizes="30x40" /> Connection
+                <img src="/static/images/icon_connected.svg" class="icon" sizes="30x40" /> Kết nối
             </div>
             <div class="sidebar-item" onclick="showTab('account')">
-                <img src="/static/images/account.png" class="icon" sizes="30x40" /> Account
+                <img src="/static/images/account.png" class="icon" sizes="30x40" /> Tài khoản
             </div>
             <div class="sidebar-item" id="logout-btn">
-                <img src="/static/images/logout.png" class="icon" sizes="20x20" /> Logout
+                <img src="/static/images/logout.png" class="icon" sizes="20x20" /> Đăng xuất
             </div>
         </div>
 
         <!-- KHUNG TRẮNG NỘI DUNG -->
         <div class="content">
-            <!-- TAB HOME -->
+            <!-- TAB TRANG CHỦ -->
             <div id="home" class="tab active">
                 <div class="user-info">
                     <img src="/static/images/Logo-TA.png" class="logo-img" />
@@ -50,26 +50,25 @@
                 </div>
                 <div style="max-width: 1500px; width: 100%;">
                     <div class="header-row">
-                        <h2>Templates</h2>
+                        <h2>Các chủ đề</h2>
                         <input type="text" id="searchInput" onkeyup="filterButtons()"
-                            placeholder="Search templates..." />
+                            placeholder="Tìm kiếm chủ đề..." />
                     </div>
                     <div id="buttonContainer"></div>
                 </div>
             </div>
-            <!-- Template Detail -->
+
+            <!-- CHI TIẾT GIAO DIỆN MẪU -->
             <div id="template-detail" class="tab-content" style="display: none;">
                 <div class="content" id="template-detail-content">
                     <button id="back-to-list">← Quay lại</button>
-
                 </div>
             </div>
 
-            <!-- TAB Connection -->
+            <!-- TAB KẾT NỐI -->
             <div id="connection" class="tab">
                 <div class="connection-header">
-                    <h2>Connecting device</h2>
-
+                    <h2>Thiết bị đang kết nối</h2>
                 </div>
 
                 <div class="device-list">
@@ -80,13 +79,11 @@
                         <div class="device-info">
                             <div class="device-name" id="deviceName"></div>
                             <div class="device-id">Địa chỉ: <span id="deviceIdDisplay"></span></div>
-                            <div class="device-last-seen">Last seen: <span id="deviceLastSeenDisplay"></span></div>
-
                         </div>
                         <div class="device-status-container">
                             <div class="connection-status">
                                 <span class="status-indicator"></span>
-                                <span class="status-text" id="deviceStatusText">Checking...</span>
+                                <span class="status-text" id="deviceStatusText">Đang kiểm tra...</span>
                             </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="deviceToggle" disabled>
@@ -96,7 +93,8 @@
                     </div>
                 </div>
             </div>
-            <!-- TAB ACCOUNT -->
+
+            <!-- TAB TÀI KHOẢN -->
             <div id="account" class="tab">
                 <div class="user-info">
                     <img src="/static/images/Logo-TA.png" class="logo-img" />
@@ -109,15 +107,15 @@
 
                 <div class="account-wrapper">
                     <div class="account-card">
-                        <h2 style="font-size: 24px; margin-bottom: 20px; color: #333; font-weight: normal;">Personal
-                            information</h2>
+                        <h2 style="font-size: 24px; margin-bottom: 20px; color: #333; font-weight: normal;">
+                            Thông tin cá nhân
+                        </h2>
                         <p style="font-size: 16px; color: #666; margin-bottom: 30px;">
-                            Manage your personal information, including username, email address where you can be
-                            contacted
+                            Quản lý thông tin cá nhân của người dùng bao gồm tên đăng nhập, địa chỉ email.
                         </p>
 
                         <div class="account-layout">
-                            <!-- Phần bên trái - Logo và nút reset -->
+                            <!-- BÊN TRÁI: ẢNH ĐẠI DIỆN & NÚT ĐỔI MẬT KHẨU -->
                             <div class="account-left">
                                 <div class="user-profile">
                                     <div class="user-avatar-large">
@@ -129,16 +127,16 @@
 
                                 <button class="reset-password-btn" id="resetPasswordBtn">
                                     <img src="/static/images/reset-password.png" alt="Reset Password" />
-                                    Reset Password
+                                    Đặt lại mật khẩu
                                 </button>
                             </div>
 
-                            <!-- Phần bên phải - Thông tin cá nhân -->
+                            <!-- BÊN PHẢI: THÔNG TIN -->
                             <div class="account-right">
                                 <div class="info-grid">
                                     <div class="info-item">
                                         <div class="info-content">
-                                            <div class="info-label">Username</div>
+                                            <div class="info-label">Tên đăng nhập</div>
                                             <div class="info-value" id="account-username-display"></div>
                                         </div>
                                         <img src="/static/images/username.png" class="info-icon" />
@@ -146,7 +144,7 @@
 
                                     <div class="info-item">
                                         <div class="info-content">
-                                            <div class="info-label">Name</div>
+                                            <div class="info-label">Họ tên</div>
                                             <div class="info-value" id="account-name-display"></div>
                                         </div>
                                         <img src="/static/images/name.png" class="info-icon" />
@@ -162,7 +160,7 @@
 
                                     <div class="info-item">
                                         <div class="info-content">
-                                            <div class="info-label">Device ID</div>
+                                            <div class="info-label">Mã thiết bị</div>
                                             <div class="info-value" id="account-device-display"></div>
                                         </div>
                                         <img src="/static/images/pi.png" class="info-icon" />

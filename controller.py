@@ -1,46 +1,106 @@
+
+import os
 from my_log import AppLogger
 from datetime import datetime
 from flask import Flask, send_from_directory, request, jsonify
 from sql_functions import SQLFunction
 from jwt_manager import JWTManager
+from flask_socketio import SocketIO, emit
+from flask import Response
+from dotenv import load_dotenv
 import error_codes as EC
 import json
-
+load_dotenv() 
 log = AppLogger()
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 sql = SQLFunction()
-jwt_manager = JWTManager(secret_key="phuctnh")
+jwt_manager = JWTManager(secret_key=os.environ.get("JWT_SECRET_KEY"))
 
 
+# <---------------------WebSocket----------------->
+@socketio.on('receive_data')
+def handle_receive_data(data):
+    log.info("[WS-RECEIVE_DATA] " + json.dumps(data, ensure_ascii=False))
+    emit('receive_data_response', {
+        "status": "success",
+        "message": "Cấu hình đã nhận.",
+        "received": data
+    })
+connected_devices = {}
+@socketio.on('connect')
+def on_connect():
+    log.info("[WS-CONNECT] New WebSocket connection established")
+
+
+@socketio.on('disconnect')
+def on_disconnect():
+    disconnected_sid = request.sid
+    for dev_id, sid in list(connected_devices.items()):
+        if sid == disconnected_sid:
+            log.info(f"[WS-DISCONNECT] Device {dev_id} disconnected")
+            del connected_devices[dev_id]
+
+@socketio.on("data_sensor")
+def handle_sensor_data(data):
+    print("Sensor data from RPi:", data)
+    socketio.emit("data_sensor_web", {"received": data}, namespace="/")
+
+@socketio.on('send_config')
+def handle_send_config(config_data):
+    device_id = config_data.get("device_id", "raspberry-01")
+    log.info(f"[WS-SEND_CONFIG] Sent config to device_id: {device_id}")
+    target_sid = connected_devices.get(device_id)
+    socketio.emit('data_config', config_data, to=target_sid)
+    emit('receive_data_response', {
+        "status": "success",
+        "message": f"Đã gửi cấu hình tới {device_id}"
+    })
+
+
+@socketio.on('sensor_data')
+def handle_sensor_data(data):
+    log.info("[WS-SENSOR_DATA] Dữ liệu từ Raspberry:")
+    log.info(json.dumps(data, indent=2, ensure_ascii=False))
+
+    emit('sensor_data_response', {
+        "status": "success",
+        "message": "Server đã nhận dữ liệu cảm biến.",
+        "received": data
+    })
+
+
+@socketio.on('heartbeat')
+def handle_heartbeat(data):
+    device_id = data.get("device_id")
+    if not device_id:
+        log.warning("[WS-HEARTBEAT] Missing device_id")
+        emit('heartbeat_response', {"code": EC.MISSING_DEVICE_ID, "message": "Missing device_id"})
+        return
+
+    log.info(f"[WS-HEARTBEAT] Received from device: {device_id}")
+    now = datetime.utcnow().isoformat()
+    sql.upsert_device(device_id, now)
+    connected_devices[device_id] = request.sid
+    emit('heartbeat_response', {"code": EC.SUCCESS, "message": "OK"})
+
+# <--------------------REST-API------------------>
 @app.route('/')
 def serve_html():
     return send_from_directory('static', 'login.html')
 
-@app.route('/receive_data', methods=['POST'])
-def receive_config():
-    data = request.get_json()
-    print("[RECEIVE_DATA] " + json.dumps(data, ensure_ascii=False))
-    log.info("[RECEIVE_DATA] " + json.dumps(data, ensure_ascii=False))
-    # (Xử lý tùy ý ở đây, ví dụ lưu vào file, kiểm tra, phản hồi...)
-    return jsonify({
-        "status": "success",
-        "message": "Cấu hình đã nhận.",
-        "received": data
-    }), 200
-
-@app.route('/heartbeat', methods=['POST'])
-def heartbeat():
-    device_id = request.json.get("device_id")
-    if not device_id:
-        log.warning("[HEARTBEAT] Missing device_id")
-        return jsonify({"code": EC.MISSING_DEVICE_ID, "message": "Missing device_id"}), 400
-
-    log.info(f"[HEARTBEAT] Received from device: {device_id}")
-    now = datetime.utcnow().isoformat()
-    sql.upsert_device(device_id, now)
-    return jsonify({"code": EC.SUCCESS, "message": "OK"}), 200
-
+@app.route('/log')
+def view_log():
+    log_path = "app.log"
+    
+    if not os.path.exists(log_path):
+        return jsonify({"error": "Log file not found"}), 404
+    
+    with open(log_path, 'r', encoding='utf-8') as f:
+        log_content = f.read()
+    
+    return Response(f"<pre>{log_content}</pre>", mimetype='text/html') 
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -74,31 +134,24 @@ def login():
     if result != EC.SUCCESS:
         log.warning(f"[LOGIN] Invalid credentials for {username}")
         return jsonify({"code": EC.INVALID_CREDENTIALS, "message": "Invalid credentials"}), 401
-    # Xoá các device không online khỏi user
     sql.cleanup_stale_devices()
-    # Tìm device online trong 20s gần nhất
     device_id = sql.get_online_device()
     if not device_id:
         log.warning(f"[LOGIN] No device online for {username}")
         return jsonify({"code": EC.NO_DEVICE_ONLINE, "message": "No Raspberry Pi online"}), 503
-    # Kiểm tra nếu device_id đang được dùng bởi user khác
     if sql.is_device_assigned_to_another_user(username, device_id):
         log.warning(f"[LOGIN] Device assigned to another user: {device_id}")
         return jsonify({"code": EC.DEVICE_ASSIGNED_TO_OTHER, "message": "Device assigned to another user"}), 403
-    # Gán device_id nếu user chưa có
-    user_device_id = sql.get_user_device(username) # Thiết bị đã gán trước
+    user_device_id = sql.get_user_device(username)
     if user_device_id is None:
         sql.set_user_device(username, device_id)
     elif user_device_id != device_id:
-         # Nếu đã gán rồi mà khác => mismatch
         log.warning(f"[LOGIN] Device mismatch for {username}")
         return jsonify({"code": EC.DEVICE_MISMATCH, "message": "Device mismatch"}), 403
 
     token = jwt_manager.create_token({"username": username, "device_id": device_id})
     log.info(f"[LOGIN] {username} logged in successfully.")
     return jsonify({"token": token, "code": EC.SUCCESS}), 200
-
-
 
 @app.route('/user_info', methods=['GET'])
 def user_info():
@@ -260,5 +313,5 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+     socketio.run(app, host='0.0.0.0', port=5555, debug=True)
     

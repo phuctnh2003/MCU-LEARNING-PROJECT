@@ -12,12 +12,10 @@ const openMenu = document.getElementById('openMenu');
 const closeMenu = document.getElementById('closeMenu');
 const buttonContainer = document.getElementById('buttonContainer');
 const templates = [
-  { name: 'i2c', description: 'Giao tiếp I2C cơ bản' },
-  { name: 'LED Blink', description: 'Nhấp nháy LED' },
-  { name: 'UART', description: 'Truyền thông UART' },
-  { name: 'ADC Read', description: 'Đọc ADC' },
-  { name: 'LCD Display', description: 'Hiển thị trên LCD' },
-  { name: 'Button Control', description: 'Điều khiển nút nhấn' }
+  { name: 'I2C', description: 'Giao tiếp I2C với cảm biến đo nhịp tim và nồng độ oxy trong máu MAX30102' },
+  { name: 'UART', description: 'Thu nhận dữ liệu giữa Raspberry Pi và Arduino' },
+  { name: 'SPI', description: 'Đọc ADC' },
+  { name: 'I2C', description: 'Giao tiếp I2C với cảm biến khoảng cách HCSR04' }
 ];
 // Thêm các biến quản lý trạng thái thiết bị
 const deviceToggle = document.getElementById('deviceToggle1');
@@ -41,10 +39,8 @@ function showTab(id) {
   sidebar.classList.remove('active');
   openMenu.style.display = 'block';
 
-  // Quản lý interval kiểm tra trạng thái thiết bị
   if (id === 'connection') {
     updateConnectionTab();
-    // Kiểm tra trạng thái mỗi 10 giây khi ở tab connection
     if (this.connectionInterval) clearInterval(this.connectionInterval);
     this.connectionInterval = setInterval(updateConnectionTab, 10000);
   } else {
@@ -93,7 +89,6 @@ async function checkDeviceStatus() {
 
 async function updateConnectionTab() {
   try {
-    // Gọi API lấy thông tin thiết bị bằng username
     const token = localStorage.getItem("jwt_token");
     const response = await fetch("/device_info_by_username", {
       method: "GET",
@@ -106,27 +101,10 @@ async function updateConnectionTab() {
       const data = await response.json();
       if (data.code === 0 && data.data) {
         const deviceInfo = data.data;
-        if (deviceInfo.device_ip) {
-          localStorage.setItem("raspberry_ip", deviceInfo.device_ip);
-        }
+
         // Cập nhật thông tin thiết bị
         document.getElementById('deviceIdDisplay').textContent = deviceInfo.device_ip || 'N/A';
         document.getElementById('deviceName').textContent = currentUser.device_id || 'Raspberry Pi';
-
-        // Thêm last seen nếu có
-        if (deviceInfo.last_seen) {
-          const lastSeenElement = document.createElement('div');
-          lastSeenElement.className = 'device-last-seen';
-          lastSeenElement.textContent = `Last seen: ${formatLastSeen(deviceInfo.last_seen)}`;
-
-          // Kiểm tra nếu đã có last seen thì cập nhật, không thì thêm mới
-          const existingLastSeen = document.querySelector('.device-last-seen');
-          if (existingLastSeen) {
-            existingLastSeen.textContent = lastSeenElement.textContent;
-          } else {
-            document.querySelector('.device-info').appendChild(lastSeenElement);
-          }
-        }
 
         // Kiểm tra trạng thái kết nối
         const statusRes = await fetch(`/check_device_status?device_id=${deviceInfo.device_id}`);
@@ -134,7 +112,6 @@ async function updateConnectionTab() {
           const statusData = await statusRes.json();
           const isOnline = statusData.online;
 
-          // Cập nhật giao diện
           const statusIndicator = document.querySelector('.status-indicator');
           const statusText = document.getElementById('deviceStatusText');
           const toggle = document.getElementById('deviceToggle');
@@ -160,39 +137,15 @@ async function updateConnectionTab() {
   }
 }
 
-// Hàm định dạng last seen
-function formatLastSeen(isoTimestamp) {
-  const lastSeenDate = new Date(isoTimestamp);
-  const now = new Date();
-  const diffMs = now - lastSeenDate;
-
-  const seconds = Math.floor(diffMs / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (seconds < 60) return 'Just now';
-  if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-  if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
-
-  // Fallback to full date
-  return lastSeenDate.toLocaleString(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  });
-}
-
-
 // Hàm cập nhật giao diện trạng thái thiết bị
 function updateDeviceStatusUI(isOnline) {
   if (deviceToggle && deviceStatus) {
-    // Chỉ cập nhật trạng thái, không cho phép tương tác
+
     deviceToggle.checked = isOnline;
     deviceStatus.textContent = isOnline ? 'Đang kết nối' : 'Mất kết nối';
     deviceStatus.style.color = isOnline ? '#4CAF50' : '#f44336';
 
-    // Thêm style để làm rõ toggle không thể tương tác
+
     const slider = document.querySelector('.slider');
     if (slider) {
       slider.style.cursor = 'not-allowed';
@@ -212,7 +165,7 @@ function renderButtons(filterText = '') {
   );
 
   if (filtered.length === 0) {
-    buttonContainer.innerHTML = '<p>No templates found.</p>';
+    buttonContainer.innerHTML = '<p>Không tim thấy mẫu.</p>';
     return;
   }
 
@@ -228,7 +181,6 @@ function renderButtons(filterText = '') {
       homeView.style.display = 'none';
       templateDetailView.style.display = 'block';
       document.getElementById('sidebar').classList.add('disabled-tabs');
-      // Hiện loading trong khi chờ tải form
       detailContent.innerHTML = `<p>Đang tải...</p>`;
 
       try {
@@ -237,67 +189,72 @@ function renderButtons(filterText = '') {
           const html = await response.text();
           detailContent.innerHTML = `
         <div class="form-header">
-    <div class="left-header">
-      <img src="/static/images/Logo-TA.png" alt="Logo" class="logo">
-    </div>
-    <div class="right-header">
-      <button id="back-to-home" class="back-button">← Quay lại</button>
-    </div>
-  </div>
-
+          <div class="left-header">
+            <img src="/static/images/Logo-TA.png" alt="Logo" class="logo">
+          </div>
+          <div class="right-header">
+            <button id="back-to-home" class="back-button">← Quay lại</button>
+          </div>
+        </div>
         <div class="form-container">${html}</div>
       `;
-          document.getElementById('interfaceInput').value = t.name;
-          document.getElementById('interfaceDisplay').textContent = t.name;
-          console.log(t.name.toLowerCase)
-          const script = document.createElement('script');
-          script.src = '/static/js/form-script.js';
-          script.onload = () => {
-            // Sau khi script load, gắn sự kiện
-            const addInitBtn = document.getElementById('addInitRowBtn');
-            if (addInitBtn) addInitBtn.addEventListener('click', addInitRow);
 
-            const addFieldBtn = document.getElementById('addFieldRowBtn');
-            if (addFieldBtn) addFieldBtn.addEventListener('click', addFieldRow);
-            if (typeof initFormEvents === 'function') initFormEvents();
+          document.getElementById('interfaceInput').value = t.name.toLowerCase();
+          document.getElementById('interfaceDisplay').textContent = t.name;
+
+          const socketIoScript = document.createElement('script');
+          socketIoScript.src = 'https://cdn.socket.io/4.8.1/socket.io.min.js';
+          socketIoScript.onload = () => {
+            const script = document.createElement('script');
+            script.src = '/static/js/form-script.js';
+            script.onload = () => {
+              if (typeof initWebSocket === "function") initWebSocket();
+              if (typeof initFormEvents === 'function') initFormEvents();
+              if (typeof showInterfaceForm === 'function') {
+                showInterfaceForm(t.name.toLowerCase());
+              } else {
+                console.error('showInterfaceForm is not defined');
+              }
+            };
+            document.body.appendChild(script);
           };
-          document.body.appendChild(script);
+          document.body.appendChild(socketIoScript);
         } else {
           detailContent.innerHTML = `
         <div class="form-header">
-    <div class="left-header">
-      <img src="/static/images/Logo-TA.png" alt="Logo" class="logo">
-    </div>
-    <div class="right-header">
-      <button id="back-to-home" class="back-button">← Quay lại</button>
-    </div>
-  </div>
-
+          <div class="left-header">
+            <img src="/static/images/Logo-TA.png" alt="Logo" class="logo">
+          </div>
+          <div class="right-header">
+            <button id="back-to-home" class="back-button">← Quay lại</button>
+          </div>
+        </div>
         <p>Lỗi khi tải nội dung form. Vui lòng thử lại.</p>
       `;
         }
       } catch (err) {
-        console.error("Lỗi khi tải form-content.html:", err);
+        console.error('Error loading form:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi tải form',
+          text: 'Không thể tải nội dung biểu mẫu. Vui lòng thử lại sau.',
+        });
         detailContent.innerHTML = `
-     <div class="form-header">
-    <div class="left-header">
-      <img src="/static/images/Logo-TA.png" alt="Logo" class="logo">
-    </div>
-    <div class="right-header">
-      <button id="back-to-home" class="back-button">← Quay lại</button>
-    </div>
-  </div>
+      <div class="form-header">
+        <div class="left-header">
+          <img src="/static/images/Logo-TA.png" alt="Logo" class="logo">
+        </div>
+        <div class="right-header">
+          <button id="back-to-home" class="back-button">← Quay lại</button>
+        </div>
+      </div>
       <p>Không thể tải nội dung form.</p>
     `;
       }
 
-      // Gắn sự kiện quay lại sau khi nội dung được render
       const backBtn = document.getElementById('back-to-home');
       if (backBtn) {
-        backBtn.onclick = () => {
-          location.reload();
-
-        };
+        backBtn.onclick = () => location.reload();
       }
     };
 
@@ -310,7 +267,7 @@ function filterButtons() {
   renderButtons(keyword);
 }
 
-function showToast(type, title, text) {
+window.showToast = function (type, title, text) {
   Swal.fire({
     icon: type,
     title: title,
@@ -357,7 +314,7 @@ function updateUserInfoDisplays() {
 async function fetchUserInfo() {
   const token = localStorage.getItem("jwt_token");
   if (!token) {
-    showToast("error", "Missing Token", "Please log in again.");
+    showToast("error", "Thiếu token", "Hãy đăng nhập lại");
     window.location.href = "/";
     return;
   }
@@ -365,7 +322,7 @@ async function fetchUserInfo() {
   const payload = parseJwt(token);
 
   if (!payload || !payload.device_id) {
-    showToast("error", "Invalid Token", "Token format is invalid. Please log in again.");
+    showToast("error", "Token không hợp lệ", "Token không hợp lệ, hãy đăng nhập lại");
     localStorage.removeItem("jwt_token");
     updateStatusDot(false);
     window.location.href = "/";
@@ -409,7 +366,7 @@ async function fetchUserInfo() {
 
       updateUserInfoDisplays();
       await updateConnectionTab();
-      startDeviceStatusMonitoring(); // Bắt đầu kiểm tra trạng thái sau khi có thông tin user
+      startDeviceStatusMonitoring();
 
     } else {
       handleApiError(data);
@@ -418,9 +375,8 @@ async function fetchUserInfo() {
       window.location.href = "/";
     }
   } catch (err) {
-    console.error("Error fetching user info:", err);
     updateStatusDot(false);
-    showToast("error", "Network Error", "Unable to fetch user info.");
+    showToast("error", "Lỗi", "Không thể tải thông tin người dùng");
   }
 }
 
@@ -449,7 +405,7 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
     }
   } catch (error) {
     console.error("Logout error:", error);
-    showToast("error", "Logout Failed", "An error occurred during logout.");
+    showToast("error", "Lỗi", "Đăng xuất thất bại");
   }
 });
 
@@ -481,7 +437,7 @@ async function attemptReconnectWithRetry() {
     allowEscapeKey: false,
     didOpen: () => {
       reconnectTimer = setTimeout(() => {
-        Swal.close(); // Tự đóng sau 20s
+        Swal.close();
         resolveChoice('timeout');
       }, 20000);
     },
@@ -507,7 +463,7 @@ async function attemptReconnectWithRetry() {
 
 function resetDeviceMonitor() {
   reconnectAttempts = 0;
-  isReconnecting = false; // reset flag
+  isReconnecting = false;
   clearTimers();
   startDeviceStatusMonitoring();
 }
@@ -516,7 +472,7 @@ async function handleRetryOrFail() {
   reconnectAttempts++;
   showLoading(true);
 
-  await new Promise(res => setTimeout(res, 5000)); // loading xoay 5s
+  await new Promise(res => setTimeout(res, 3000));
 
   try {
     const res = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
@@ -533,10 +489,10 @@ async function handleRetryOrFail() {
         text: 'Thiết bị đã được kết nối lại.'
       });
 
-      resetDeviceMonitor(); // Reset lại trạng thái
+      resetDeviceMonitor();
       return;
     } else {
-      // Retry tiếp nếu chưa đủ số lần
+
       if (reconnectAttempts < 5) {
         setTimeout(() => attemptReconnectWithRetry(), 100);
       } else {
@@ -601,43 +557,43 @@ function handleApiError(data) {
 
   switch (code) {
     case 1203: // MISSING_TOKEN
-      showToast("error", "Missing Token", message);
+      showToast("error", "Thiếu token", message);
       break;
     case 1208: // INVALID_TOKEN_FORMAT
-      showToast("error", "Invalid Token Format", message);
+      showToast("error", "Sai định dạng token", message);
       break;
     case 1205: // TOKEN_EXPIRED
-      showToast("error", "Token Expired", message);
+      showToast("error", "Token hết hạn", message);
       break;
     case 1204: // INVALID_TOKEN
-      showToast("error", "Invalid Token", message);
+      showToast("error", "Token không hợp lệ", message);
       break;
     case 1206: // USER_NOT_FOUND
-      showToast("error", "User Not Found", message);
+      showToast("error", "Người dùng không tồn tại", message);
       break;
     case 1201: // INTERNAL_ERROR
-      showToast("error", "Server Error", message);
+      showToast("error", "Lỗi hệ thống", message);
       break;
     case 1204: // MISSING_DEVICE_ID
-      showToast("error", "Missing Device ID", message);
+      showToast("error", "Thiếu mã thiết bị", message);
       break;
     case 1005: // DEVICE_ID_NOT_FOUND
-      showToast("error", "Device ID not found")
+      showToast("error", "Không tìm thấy mã thiết bị")
       break;
     default:
-      showToast("error", "Error", message);
+      showToast("error", "Có lỗi xảy ra", message);
   }
 }
 
 // Xử lý reset password
 document.getElementById('resetPasswordBtn').addEventListener('click', function () {
   Swal.fire({
-    title: 'Change Password',
+    title: 'Đổi mật khẩu',
     html: `
-                <input type="password" id="oldPassword" class="swal2-input" placeholder="Old Password">
-                <input type="password" id="newPassword" class="swal2-input" placeholder="New Password">
+                <input type="password" id="oldPassword" class="swal2-input" placeholder="Mật khẩu cũ">
+                <input type="password" id="newPassword" class="swal2-input" placeholder="Mật khẩu mới">
                 <label style="display:flex;align-items:center;justify-content:center;margin-top:5px;">
-                    <input type="checkbox" id="showPasswordToggle" style="margin-right:5px;"> Show Passwords
+                    <input type="checkbox" id="showPasswordToggle" style="margin-right:5px;">
                 </label>
             `,
     confirmButtonText: 'Change',
@@ -657,7 +613,7 @@ document.getElementById('resetPasswordBtn').addEventListener('click', function (
       const newPass = document.getElementById('newPassword').value;
 
       if (!oldPass || !newPass) {
-        Swal.showValidationMessage('Please fill in both fields');
+        Swal.showValidationMessage('Hãy điền đủ thông tin');
         return false;
       }
 
@@ -680,17 +636,16 @@ document.getElementById('resetPasswordBtn').addEventListener('click', function (
           }
         })
         .catch(error => {
-          Swal.showValidationMessage(`Request failed: ${error.message}`);
+          Swal.showValidationMessage(`Có lỗi xảy ra khi đổi mật khẩu`);
         });
     }
   }).then((result) => {
     if (result.isConfirmed && result.value) {
-      Swal.fire('Success', 'Password changed successfully!', 'success');
+      Swal.fire('Success', 'Đổi mật khẩu thành công', 'Thành công');
     }
   });
 });
 
-// Khởi động ứng dụng
 document.addEventListener('DOMContentLoaded', function () {
   fetchUserInfo();
   renderButtons();
