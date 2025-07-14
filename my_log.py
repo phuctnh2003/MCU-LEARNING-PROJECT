@@ -1,4 +1,5 @@
 import logging
+import sys
 
 class AppLogger:
     def __init__(self, name='AppLogger', log_file='app.log'):
@@ -9,11 +10,17 @@ class AppLogger:
             "%(asctime)s - %(levelname)s - %(message)s"
         )
 
-        file_handler = logging.FileHandler(log_file)
+        # File handler (đã đúng)
+        file_handler = logging.FileHandler("log.txt", encoding='utf-8')
         file_handler.setFormatter(formatter)
 
-        stream_handler = logging.StreamHandler()
+
+        stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
+        try:
+            stream_handler.stream.reconfigure(encoding='utf-8')
+        except AttributeError:
+            pass
 
         if not self.logger.hasHandlers():
             self.logger.addHandler(file_handler)
@@ -30,3 +37,5 @@ class AppLogger:
 
     def debug(self, msg):
         self.logger.debug(msg)
+
+log = AppLogger()

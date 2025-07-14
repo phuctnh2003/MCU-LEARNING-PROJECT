@@ -1,7 +1,59 @@
 import re
 import hashlib
+import os
+import json
+import time
+from openai import OpenAI
+from dotenv import load_dotenv
 
+   
 PASSWORD_PATTERN = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{4,}$'
+
+load_dotenv()
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("API_KEY_DEEPSEEK") 
+)
+
+def extract_code(text):
+    match = re.search(r"```(?:python)?\n(.*?)```", text, re.DOTALL)
+    return match.group(1).strip() if match else text.strip()
+
+def clean_markdown(md_text: str) -> str:
+    """
+    Loại bỏ các ký tự định dạng markdown như **, __, ###, - ...
+    """
+    text = md_text
+    text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)      # **bold**
+    text = re.sub(r"__([^_]+)__", r"\1", text)         # __underline__
+    text = re.sub(r"`([^`]+)`", r"\1", text)           # `code`
+    text = re.sub(r"#+\s*", "", text)                 # ### headers
+    text = re.sub(r"-\s+", "- ", text)                # Normalize list
+    return text.strip()
+
+# Gọi chatbox
+def explain_sensor_data(data: dict, clean_output=True) -> str:
+    start_time = time.time()
+    formatted_json = json.dumps(data, indent=2, ensure_ascii=False)
+
+    prompt = (
+        "Dưới đây là dữ liệu cảm biến ở định dạng JSON:\n\n"
+        + formatted_json +
+        "\n\nHãy giải thích ngắn gọn dữ liệu này dùng để làm gì. "
+        "Nếu không đủ thông tin, hãy nói rõ không xác định được mục đích."
+    )
+
+    completion = client.chat.completions.create(
+        model="deepseek/deepseek-r1-0528",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=2000
+    )
+
+    elapsed_time = time.time() - start_time
+    print(f"⏳ Response time: {elapsed_time:.2f} seconds\n")
+
+    raw_output = completion.choices[0].message.content
+    return clean_markdown(raw_output) if clean_output else raw_output
 
 # Function to compute MD5 hash and return it as a 32-character hexadecimal string
 def md5_transmit(input_str):

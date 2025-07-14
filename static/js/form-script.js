@@ -1,25 +1,43 @@
 let socket;
 
 function initWebSocket() {
-    socket = io("http://localhost:5000");
+    console.log("[Đang khởi tạo kết nối WebSocket...");
 
-    socket.on("connect", () => {
-        console.log("WebSocket connected");
-    });
+    socket = new WebSocket("wss://mcu-learning.project.io.vn/ws");
 
-    socket.on("disconnect", () => {
-        console.log("❌ WebSocket disconnected");
-    });
-    socket.on("data_sensor_web", (data) => {
-        const output = document.getElementById("output");
-        if (output) {
-            output.textContent = JSON.stringify(data.received || data, null, 2);
-        } else {
-            if (window.showToast) {
+    socket.onopen = () => {
+        console.log("WebSocket đã kết nối thành công");
+    };
+
+    socket.onclose = () => {
+        console.log("WebSocket đã mất kết nối");
+    };
+
+    socket.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        const { event: evt, data } = msg;
+
+        if (evt === "data_sensor_web") {
+            const output = document.getElementById("output");
+            if (output) {
+                output.textContent = JSON.stringify(data.received || data, null, 2);
+            } else {
                 showToast("error", "Lỗi", "Nhận kết quả thất bại");
             }
         }
-    });
+    };
+}
+
+function extractDeviceIdFromJwt() {
+    const token = localStorage.getItem("jwt_token");
+    if (!token) return null;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.device_id || null;
+    } catch (e) {
+        console.error("Lỗi giải mã JWT:", e);
+        return null;
+    }
 }
 
 function showInterfaceForm(type) {
@@ -87,8 +105,6 @@ function addUartFieldRow() {
   `;
     document.querySelector("#uartFieldTable tbody").appendChild(row);
 }
-
-
 
 function addInitRow() {
     const row = document.createElement("tr");
@@ -226,17 +242,24 @@ function initFormEvents() {
                     }
                 });
             }
+            const deviceId = extractDeviceIdFromJwt();
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                const output = document.getElementById("output");
+                if (output) {
+                    output.textContent = "⏳ Đang đợi kết quả...";
+                }
 
-            if (socket && socket.connected) {
-                socket.emit("send_config", json);
-                if (window.showToast) {
-                    showToast("success", "Thành công", "Cấu hình đã được nạp");
-                }
+                socket.send(JSON.stringify({
+                    event: "send_config",
+                    device_id: deviceId || "",
+                    data: json
+                }));
+                showToast("success", "Thành công", "Cấu hình đã được nạp");
             } else {
-                if (window.showToast) {
-                    showToast("error", "Lỗi", "Cấu hình nạp thất bại");
-                }
+                showToast("error", "Lỗi", "Cấu hình nạp thất bại");
             }
+
+
         });
     }
 

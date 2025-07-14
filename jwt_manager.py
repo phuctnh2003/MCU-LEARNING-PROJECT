@@ -1,6 +1,7 @@
 # jwt_manager.py
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
 
 class JWTManager:
     def __init__(self, secret_key, algorithm="HS256", expire_minutes=30):
@@ -9,8 +10,8 @@ class JWTManager:
         self.expire_minutes = expire_minutes
 
     def create_token(self, payload):
-        expire = datetime.utcnow() + timedelta(minutes=self.expire_minutes)
-        payload['exp'] = expire
+        expire = datetime.now(timezone.utc) + timedelta(minutes=self.expire_minutes)
+        payload["exp"] = expire
         token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
         return token
 

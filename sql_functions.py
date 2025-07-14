@@ -1,47 +1,51 @@
+import os
+from dotenv import load_dotenv
 import mysql.connector
-from my_log import AppLogger
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
+from my_log import log
 from function import md5_transmit, is_valid_password
 from error_codes import *
 
-log = AppLogger()
+load_dotenv()
+
 
 class SQLFunction:
-    def __init__(self, host="localhost", user="root", password="", database="iot_db"):
-        self.host = host
-        self.user = user
-        self.password = password
-        self.database = database
+    def __init__(self):
+        self.host = os.getenv("DB_HOST", "db")
+        self.port = int(os.getenv("DB_PORT", 3306))
+        self.user = os.getenv("DB_USER", "root")
+        self.password = os.getenv("DB_PASSWORD", "phuctnh123")
+        self.database = os.getenv("DB_NAME", "mcu")
         self._init_db()
 
     def _get_connection(self):
         return mysql.connector.connect(
             host=self.host,
+            port=self.port,
             user=self.user,
             password=self.password,
-            database=self.database
+            database=self.database,
         )
 
     def _init_db(self):
         try:
             conn = mysql.connector.connect(
-                host=self.host,
-                user=self.user,
-                password=self.password
+                host=self.host, user=self.user, password=self.password
             )
             cursor = conn.cursor()
-            
-            # Create database if not exists
+
+            # Tạo database nếu chưa có
             cursor.execute(f"CREATE DATABASE IF NOT EXISTS {self.database}")
             conn.commit()
             cursor.close()
             conn.close()
-            
+
             conn = self._get_connection()
             cursor = conn.cursor()
-            
-            # Create users table
-            cursor.execute("""
+
+            # Tạo bảng users
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS users (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     username VARCHAR(255) UNIQUE NOT NULL,
@@ -50,31 +54,44 @@ class SQLFunction:
                     password VARCHAR(255),
                     device_id VARCHAR(255)
                 )
-            """)
-            
-            # Create devices table
-            cursor.execute("""
+            """
+            )
+
+            # Tạo bảng devices
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS devices (
                     device_id VARCHAR(255) PRIMARY KEY,
                     last_seen DATETIME,
                     device_ip VARCHAR(255)
                 )
-            """)
-            
-            cursor.execute("SELECT device_id FROM devices WHERE device_id = 'raspberry-01'")
+            """
+            )
+
+            # Thêm thiết bị mặc định nếu chưa có
+            cursor.execute(
+                "SELECT device_id FROM devices WHERE device_id = 'raspberry-01'"
+            )
             if not cursor.fetchone():
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO devices (device_id, last_seen, device_ip)
                     VALUES (%s, %s, %s)
-                """, ("raspberry-01", datetime.utcnow().isoformat(), "100.78.240.100"))
-            
+                """,
+                    (
+                        "raspberry-01",
+                        datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                        "100.78.240.100",
+                    ),
+                )
+
             conn.commit()
             log.info("Database initialized successfully")
         except Exception as e:
             log.error(f"Error initializing database: {e}")
             raise
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -91,7 +108,7 @@ class SQLFunction:
             log.error(f"Error resetting database: {e}")
             return DB_ERROR
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -118,17 +135,20 @@ class SQLFunction:
                 log.error("Register email already exists")
                 return EMAIL_EXISTS
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO users (username, name, email, password)
                 VALUES (%s, %s, %s, %s)
-            """, (username, name, email, hashed_password))
+            """,
+                (username, name, email, hashed_password),
+            )
             conn.commit()
             return SUCCESS
         except Exception as e:
             log.error(f"Register Error: {e}")
             return DB_ERROR
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -138,7 +158,9 @@ class SQLFunction:
             conn = self._get_connection()
             cursor = conn.cursor()
 
-            cursor.execute("SELECT password FROM users WHERE username = %s", (username,))
+            cursor.execute(
+                "SELECT password FROM users WHERE username = %s", (username,)
+            )
             row = cursor.fetchone()
             if row and row[0] == hashed_password:
                 return SUCCESS
@@ -149,7 +171,7 @@ class SQLFunction:
             log.error(f"Login Error: {e}")
             return DB_ERROR
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -181,7 +203,9 @@ class SQLFunction:
                 log.error("Forget Password invalid old password")
                 return INVALID_OLD_PASSWORD
 
-            cursor.execute("UPDATE users SET password = %s WHERE email = %s", (hashed_new, email))
+            cursor.execute(
+                "UPDATE users SET password = %s WHERE email = %s", (hashed_new, email)
+            )
             conn.commit()
             return SUCCESS
 
@@ -189,7 +213,7 @@ class SQLFunction:
             log.error(f"Forgot Password Error: {e}")
             return DB_ERROR
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -209,9 +233,11 @@ class SQLFunction:
             conn = self._get_connection()
             cursor = conn.cursor()
 
-            cursor.execute("SELECT password FROM users WHERE username = %s", (username,))
+            cursor.execute(
+                "SELECT password FROM users WHERE username = %s", (username,)
+            )
             row = cursor.fetchone()
-            
+
             if not row:
                 log.error("Change Password user not found")
                 log.error(row)
@@ -220,9 +246,12 @@ class SQLFunction:
             stored_password = row[0]
             if stored_password != hashed_old:
                 log.error("Change Password invalid old password")
-                return INVALID_OLD_PASSWORD  
+                return INVALID_OLD_PASSWORD
 
-            cursor.execute("UPDATE users SET password = %s WHERE username = %s", (hashed_new, username))
+            cursor.execute(
+                "UPDATE users SET password = %s WHERE username = %s",
+                (hashed_new, username),
+            )
             conn.commit()
             return SUCCESS
 
@@ -230,22 +259,34 @@ class SQLFunction:
             log.error(f"Change Password Error: {e}")
             return DB_ERROR
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
-           
+
     def get_user_info(self, username):
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT username, name, email, device_id FROM users WHERE username = %s", (username,))
+            cursor.execute(
+                "SELECT username, name, email, device_id FROM users WHERE username = %s",
+                (username,),
+            )
             row = cursor.fetchone()
-            return {"username": row[0], "name": row[1], "email": row[2], "device_id": row[3]} if row else USER_NOT_FOUND
+            return (
+                {
+                    "username": row[0],
+                    "name": row[1],
+                    "email": row[2],
+                    "device_id": row[3],
+                }
+                if row
+                else USER_NOT_FOUND
+            )
         except Exception as e:
             log.error(f"Get User Info Error: {e}")
             return DB_ERROR
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -259,24 +300,30 @@ class SQLFunction:
             log.error(f"Show All Users Error: {e}")
             return DB_ERROR
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
     # Device management functions
     def add_device(self, device_id, device_ip):
         try:
-            now = datetime.utcnow().isoformat()
+            now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
             conn = self._get_connection()
             cursor = conn.cursor()
 
-            cursor.execute("SELECT device_id FROM devices WHERE device_id = %s", (device_id,))
+            cursor.execute(
+                "SELECT device_id FROM devices WHERE device_id = %s", (device_id,)
+            )
             if cursor.fetchone():
-                cursor.execute("UPDATE devices SET last_seen = %s, device_ip = %s WHERE device_id = %s",
-                            (now, device_ip, device_id))
+                cursor.execute(
+                    "UPDATE devices SET last_seen = %s, device_ip = %s WHERE device_id = %s",
+                    (now, device_ip, device_id),
+                )
             else:
-                cursor.execute("INSERT INTO devices (device_id, last_seen, device_ip) VALUES (%s, %s, %s)",
-                            (device_id, now, device_ip))
+                cursor.execute(
+                    "INSERT INTO devices (device_id, last_seen, device_ip) VALUES (%s, %s, %s)",
+                    (device_id, now, device_ip),
+                )
             conn.commit()
             log.info(f"[ADD_DEVICE] Device {device_id} added/updated successfully.")
             return SUCCESS
@@ -284,7 +331,7 @@ class SQLFunction:
             log.error(f"[ADD_DEVICE] Error: {e}")
             return DB_ERROR
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -294,32 +341,41 @@ class SQLFunction:
             cursor = conn.cursor()
 
             # Find device_id based on username
-            cursor.execute("SELECT device_id FROM users WHERE username = %s", (username,))
+            cursor.execute(
+                "SELECT device_id FROM users WHERE username = %s", (username,)
+            )
             row = cursor.fetchone()
             if not row or not row[0]:
-                log.warning(f"[GET_DEVICE_INFO] No device assigned to username '{username}'")
+                log.warning(
+                    f"[GET_DEVICE_INFO] No device assigned to username '{username}'"
+                )
                 return None
 
             device_id = row[0]
 
             # Get device info from device_id
-            cursor.execute("SELECT device_ip, last_seen FROM devices WHERE device_id = %s", (device_id,))
+            cursor.execute(
+                "SELECT device_ip, last_seen FROM devices WHERE device_id = %s",
+                (device_id,),
+            )
             device_info = cursor.fetchone()
 
             if device_info:
                 return {
                     "device_id": device_id,
                     "device_ip": device_info[0],
-                    "last_seen": device_info[1]
+                    "last_seen": device_info[1],
                 }
             else:
-                log.warning(f"[GET_DEVICE_INFO] Device {device_id} not found in devices table")
+                log.warning(
+                    f"[GET_DEVICE_INFO] Device {device_id} not found in devices table"
+                )
                 return None
         except Exception as e:
             log.error(f"[GET_DEVICE_INFO] Error: {e}")
             return DB_ERROR
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -328,16 +384,24 @@ class SQLFunction:
             conn = self._get_connection()
             cursor = conn.cursor()
 
-            cursor.execute("SELECT device_id FROM devices WHERE device_id = %s", (device_id,))
+            cursor.execute(
+                "SELECT device_id FROM devices WHERE device_id = %s", (device_id,)
+            )
             if cursor.fetchone():
-                cursor.execute("UPDATE devices SET last_seen = %s WHERE device_id = %s", (last_seen, device_id))
+                cursor.execute(
+                    "UPDATE devices SET last_seen = %s WHERE device_id = %s",
+                    (last_seen, device_id),
+                )
             else:
-                cursor.execute("INSERT INTO devices (device_id, last_seen) VALUES (%s, %s)", (device_id, last_seen))
+                cursor.execute(
+                    "INSERT INTO devices (device_id, last_seen) VALUES (%s, %s)",
+                    (device_id, last_seen),
+                )
             conn.commit()
         except Exception as e:
             log.error(f"Upsert Device Error: {e}")
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -345,15 +409,18 @@ class SQLFunction:
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            threshold = datetime.utcnow() - timedelta(seconds=20)
-            cursor.execute("SELECT device_id FROM devices WHERE last_seen >= %s", (threshold.isoformat(),))
+            threshold = datetime.now(timezone.utc) - timedelta(seconds=30)
+            threshold_str = threshold.strftime("%Y-%m-%d %H:%M:%S")
+            cursor.execute(
+                "SELECT device_id FROM devices WHERE last_seen >= %s", (threshold_str,)
+            )
             row = cursor.fetchone()
             return row[0] if row else None
         except Exception as e:
             log.error(f"Get Online Device Error: {e}")
             return None
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -361,14 +428,16 @@ class SQLFunction:
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT device_id FROM users WHERE username = %s", (username,))
+            cursor.execute(
+                "SELECT device_id FROM users WHERE username = %s", (username,)
+            )
             row = cursor.fetchone()
             return row[0] if row else None
         except Exception as e:
             log.error(f"Get User Device Error: {e}")
             return None
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -376,12 +445,15 @@ class SQLFunction:
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            cursor.execute("UPDATE users SET device_id = %s WHERE username = %s", (device_id, username))
+            cursor.execute(
+                "UPDATE users SET device_id = %s WHERE username = %s",
+                (device_id, username),
+            )
             conn.commit()
         except Exception as e:
             log.error(f"Set User Device Error: {e}")
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -389,12 +461,14 @@ class SQLFunction:
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            cursor.execute("UPDATE users SET device_id = NULL WHERE username = %s", (username,))
+            cursor.execute(
+                "UPDATE users SET device_id = NULL WHERE username = %s", (username,)
+            )
             conn.commit()
         except Exception as e:
             log.error(f"Clear User Device Error: {e}")
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -402,16 +476,23 @@ class SQLFunction:
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            threshold = datetime.utcnow() - timedelta(seconds=30)
-            cursor.execute("SELECT device_id FROM devices WHERE last_seen < %s", (threshold.isoformat(),))
+            threshold = datetime.now(timezone.utc) - timedelta(seconds=30)
+            threshold_str = threshold.strftime("%Y-%m-%d %H:%M:%S")
+            cursor.execute(
+                "SELECT device_id FROM devices WHERE last_seen < %s", (threshold_str,)
+            )
+
             stale_devices = [row[0] for row in cursor.fetchall()]
             if stale_devices:
-                cursor.executemany("UPDATE users SET device_id = NULL WHERE device_id = %s", [(d,) for d in stale_devices])
+                cursor.executemany(
+                    "UPDATE users SET device_id = NULL WHERE device_id = %s",
+                    [(d,) for d in stale_devices],
+                )
                 conn.commit()
         except Exception as e:
             log.error(f"Cleanup Stale Devices Error: {e}")
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -419,15 +500,19 @@ class SQLFunction:
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            threshold = datetime.utcnow() - timedelta(seconds=30)
-            cursor.execute("SELECT 1 FROM devices WHERE device_id = %s AND last_seen >= %s", 
-                          (device_id, threshold.isoformat()))
+            threshold = datetime.now(timezone.utc) - timedelta(seconds=30)
+            threshold_str = threshold.strftime("%Y-%m-%d %H:%M:%S")
+            cursor.execute(
+                "SELECT 1 FROM devices WHERE device_id = %s AND last_seen >= %s",
+                (device_id, threshold_str),
+            )
+
             return cursor.fetchone() is not None
         except Exception as e:
             log.error(f"Is Device Online Error: {e}")
             return False
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()
 
@@ -435,13 +520,15 @@ class SQLFunction:
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT username FROM users WHERE device_id = %s AND username != %s", 
-                         (device_id, username))
+            cursor.execute(
+                "SELECT username FROM users WHERE device_id = %s AND username != %s",
+                (device_id, username),
+            )
             return cursor.fetchone() is not None
         except Exception as e:
             log.error(f"Is Device Assigned Error: {e}")
             return False
         finally:
-            if 'conn' in locals() and conn.is_connected():
+            if "conn" in locals() and conn.is_connected():
                 cursor.close()
                 conn.close()

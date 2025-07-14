@@ -1,44 +1,26 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  tailscale:
-    image: tailscale/tailscale:latest
-    container_name: ts-authkey
-    hostname: banana
+  db:
+    image: mysql:8.0
+    restart: always
     environment:
-      - TS_AUTHKEY=tskey-auth-ku3fJuJCGz11CNTRL-hDFSVYNrCEFZtBJbDhefEFsCiNB7jbBrU
-      - TS_STATE_DIR=/var/lib/tailscale
-      - TS_USERSPACE=false
+      MYSQL_ROOT_PASSWORD: phuctnh123
+      MYSQL_DATABASE: mcu
+    ports:
+      - "4444:3306"
     volumes:
-      - tailscale-state:/var/lib/tailscale
-      - /dev/net/tun:/dev/net/tun
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    restart: unless-stopped
+      - mysql_data:/var/lib/mysql
 
   app:
     build: .
-    network_mode: service:tailscale
-    environment:
-      - DB_HOST=mariadb
-      - DB_USER=root
-      - DB_PASSWORD=123
-      - DB_NAME=phuctnh
+    image: phuctnh03/mcu-learning-test
     depends_on:
-      - mariadb
-    restart: unless-stopped
-
-  mariadb:
-    image: mariadb:11.4
-    network_mode: service:tailscale
-    environment:
-      - MYSQL_ROOT_PASSWORD=123
-      - MYSQL_DATABASE=phuctnh
-    volumes:
-      - mariadb_data:/var/lib/mysql
-    restart: always
+      - db
+    ports:
+      - "5555:5555" # REST API
+      - "5050:5050" # WebSocket
+    command: [ "/wait-for-it.sh", "db:3306", "--", "python", "main.py" ]
 
 volumes:
-  tailscale-state:
-  mariadb_data:
+  mysql_data:

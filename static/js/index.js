@@ -15,7 +15,7 @@ const templates = [
   { name: 'I2C', description: 'Giao tiếp I2C với cảm biến đo nhịp tim và nồng độ oxy trong máu MAX30102' },
   { name: 'UART', description: 'Thu nhận dữ liệu giữa Raspberry Pi và Arduino' },
   { name: 'SPI', description: 'Đọc ADC' },
-  { name: 'I2C', description: 'Giao tiếp I2C với cảm biến khoảng cách HCSR04' }
+  { name: 'CUSTOM', description: 'Biên dịch code sử dụng các thư viện hỗ trợ' }
 ];
 // Thêm các biến quản lý trạng thái thiết bị
 const deviceToggle = document.getElementById('deviceToggle1');
@@ -330,9 +330,6 @@ async function fetchUserInfo() {
   }
 
   deviceIdGlobal = payload.device_id;
-  console.log("Parsed payload:", payload);
-  console.log("deviceIdGlobal:", deviceIdGlobal);
-
   try {
     const initialStatusRes = await fetch(`/check_device_status?device_id=${deviceIdGlobal}`);
     if (initialStatusRes.ok) {
