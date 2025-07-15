@@ -1,46 +1,92 @@
 let socket;
 let lastSensorOutput = null;
+
 function initWebSocket() {
-    console.log("[Đang khởi tạo kết nối WebSocket...");
+    console.log("[Đang khởi tạo kết nối WebSocket...]");
 
     socket = new WebSocket("wss://mcu-learning.project.io.vn/ws");
-    // socket = new WebSocket("ws://127.0.0.1:5050/ws");
+
     socket.onopen = () => {
         console.log("WebSocket đã kết nối thành công");
+        showToast("success", "Thông báo", "Đã kết nối WebSocket thành công");
     };
 
     socket.onclose = () => {
         console.log("WebSocket đã mất kết nối");
+        showToast("error", "Mất kết nối", "WebSocket bị ngắt, đang thử lại sau 3 giây...");
+        setTimeout(initWebSocket, 3000);
     };
 
     socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
+        let msg;
+        try {
+            msg = JSON.parse(event.data);
+        } catch (e) {
+            console.error("Không thể parse JSON:", e);
+            showToast("error", "Lỗi", "Dữ liệu không hợp lệ từ máy chủ");
+            setProcessingState(false);
+            return;
+        }
+
         const { event: evt, data } = msg;
-        console.log("Raw WebSocket message:", event.data);
-        console.log("Parsed message:", { evt, data });
+
         if (evt === "data_sensor_web") {
             const output = document.getElementById("output");
-            if (output) {
-                output.textContent = JSON.stringify(data.received || data, null, 2);
-                lastSensorOutput = JSON.stringify(data.received || data, null, 2);
-            } else {
-                showToast("error", "Lỗi", "Nhận kết quả thất bại");
+            if (!output) {
+                showToast("error", "Lỗi", "Không tìm thấy vùng hiển thị dữ liệu");
+                setProcessingState(false);
+                return;
             }
-        } else if (evt === "gpt_explanation_result") {
+
+            output.style.whiteSpace = "pre-wrap";
+
+            const payload = data.received || data;
+
+            if (payload.error) {
+                output.innerHTML = escapeHTML(payload.error).replace(/\n/g, "<br>");
+                output.style.color = "red";
+            } else if (payload.output) {
+                output.innerHTML = escapeHTML(payload.output).replace(/\n/g, "<br>");
+                output.style.color = "black";
+            }
+            else {
+                output.textContent = JSON.stringify(payload, null, 2);
+                output.style.color = "black";
+            }
+
+            lastSensorOutput = output.textContent;
+            setProcessingState(false);
+        }
+
+
+        else if (evt === "gpt_explanation_result") {
             const explainOutput = document.getElementById("output_ex");
             const explainField = document.getElementById("explanationField");
 
-            if (data.error) {
-                explainOutput.textContent = "Lỗi: " + data.error;
+            if (explainOutput) {
+                explainOutput.style.whiteSpace = "pre-wrap";
+                if (data.error) {
+                    explainOutput.textContent = "Lỗi: " + data.error;
+                    explainOutput.style.color = "red";
+                } else {
+                    explainOutput.textContent = data.content;
+                    explainOutput.style.color = "black";
+                }
+                explainField.classList.remove("hidden");
             } else {
-                explainOutput.textContent = data.content;
+                showToast("error", "Lỗi", "Không tìm thấy vùng hiển thị giải thích");
             }
-
-            explainField.classList.remove("hidden");
-        };
-    }
+            setProcessingState(false);
+        }
+    };
 }
 
+function escapeHTML(str) {
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
 function extractDeviceIdFromJwt() {
     const token = localStorage.getItem("jwt_token");
     if (!token) return null;
@@ -317,7 +363,7 @@ function initFormEvents() {
                 if (output) {
                     output.textContent = "⏳ Đang đợi kết quả...";
                 }
-                console.log(json)
+                setProcessingState(true);
                 socket.send(JSON.stringify({
                     event: "send_config",
                     device_id: extractDeviceIdFromJwt() || "",
@@ -348,6 +394,7 @@ document.getElementById("explainBtn").addEventListener("click", function () {
     }
 
     if (socket && socket.readyState === WebSocket.OPEN) {
+        setProcessingState(true);
         socket.send(JSON.stringify({
             event: "explain_sensor_data",
             data: lastSensorOutput
@@ -356,3 +403,10 @@ document.getElementById("explainBtn").addEventListener("click", function () {
         showToast("error", "Lỗi", "WebSocket chưa sẵn sàng");
     }
 });
+function setProcessingState(isProcessing) {
+    const runBtn = document.querySelector("button[type='submit']");
+    const explainBtn = document.getElementById("explainBtn");
+
+    if (runBtn) runBtn.disabled = isProcessing;
+    if (explainBtn) explainBtn.disabled = isProcessing;
+}
