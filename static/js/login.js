@@ -93,10 +93,8 @@ document.getElementById('login-btn').addEventListener('click', async () => {
         case 0:
             localStorage.setItem("jwt_token", data.token);
             resetLoginForm();
-            showToast("success", "Thành công", "Đăng nhập thành công!");
-            setTimeout(() => {
-                window.location.href = "index";
-            }, 2000);
+            await showToast("success", "Thành công", "Đăng nhập thành công!");
+            window.location.href = "index";
             break;
         case 1201:
             showToast("error", "Lỗi", "Tên đăng nhập hoặc mật khẩu không đúng");
@@ -229,8 +227,8 @@ function resetForgetPasswordModal() {
 }
 
 // Hàm hiển thị thông báo ngắn
-function showToast(type, title, text) {
-    Swal.fire({
+async function showToast(type, title, text) {
+    return Swal.fire({
         icon: type,
         title: title,
         text: text,

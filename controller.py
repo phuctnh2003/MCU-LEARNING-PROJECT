@@ -1,4 +1,3 @@
-
 import os
 from my_log import log
 from flask import Flask, send_from_directory, request, jsonify
@@ -15,63 +14,100 @@ sock = Sock(app)
 sql = SQLFunction()
 jwt_manager = JWTManager(secret_key=os.environ.get("JWT_SECRET_KEY"))
 
-# <--------------------REST-API------------------>
-@app.route('/')
-def serve_html():
-    return send_from_directory('static', 'login.html')
 
-@app.route('/log')
+# <--------------------REST-API------------------>
+@app.route("/")
+def serve_html():
+    return send_from_directory("static", "login.html")
+
+
+@app.route("/log")
 def view_log():
-    log_path = "app.log"
-    
+    log_path = "/home/phuctnh/mcu-learning-v1.0-beta/app.log"
+
     if not os.path.exists(log_path):
         return jsonify({"error": "Log file not found"}), 404
-    
-    with open(log_path, 'r', encoding='utf-8') as f:
-        log_content = f.read()
-    
-    return Response(f"<pre>{log_content}</pre>", mimetype='text/html') 
 
-@app.route('/register', methods=['POST'])
+    with open(log_path, "r", encoding="utf-8") as f:
+        log_content = f.read()
+
+    return Response(f"<pre>{log_content}</pre>", mimetype="text/html")
+
+
+@app.route("/register", methods=["POST"])
 def register():
-    username = request.form.get('username')
-    name = request.form.get('name')
-    email = request.form.get('email')
-    password = request.form.get('password')
+    username = request.form.get("username")
+    name = request.form.get("name")
+    email = request.form.get("email")
+    password = request.form.get("password")
 
     result = sql.register_user(username, name, email, password)
     log.info(f"[REGISTER] Attempt: {username} - Result: {result}")
 
     if result == EC.SUCCESS:
-        return jsonify({"code": EC.SUCCESS, "message": "User registered successfully"}), 200
+        return (
+            jsonify({"code": EC.SUCCESS, "message": "User registered successfully"}),
+            200,
+        )
     elif result == EC.USERNAME_EXISTS:
-        return jsonify({"code": EC.USERNAME_EXISTS, "message": "Username already exists"}), 400
+        return (
+            jsonify({"code": EC.USERNAME_EXISTS, "message": "Username already exists"}),
+            400,
+        )
     elif result == EC.EMAIL_EXISTS:
-        return jsonify({"code": EC.EMAIL_EXISTS, "message": "Email already exists"}), 400
+        return (
+            jsonify({"code": EC.EMAIL_EXISTS, "message": "Email already exists"}),
+            400,
+        )
     elif result == EC.INVALID_PASSWORD_FORMAT:
-        return jsonify({"code": EC.INVALID_PASSWORD_FORMAT, "message": "Invalid password format"}), 400
+        return (
+            jsonify(
+                {
+                    "code": EC.INVALID_PASSWORD_FORMAT,
+                    "message": "Invalid password format",
+                }
+            ),
+            400,
+        )
     else:
         log.error(f"[REGISTER] Unknown error for {username}")
-        return jsonify({"code": EC.INTERNAL_ERROR, "message": "Internal server error"}), 500
+        return (
+            jsonify({"code": EC.INTERNAL_ERROR, "message": "Internal server error"}),
+            500,
+        )
 
 
-@app.route('/login', methods=['POST'])
+@app.route("/login", methods=["POST"])
 def login():
-    username = request.form.get('username')
-    password = request.form.get('password')
+    username = request.form.get("username")
+    password = request.form.get("password")
 
     result = sql.login_user(username, password)
     if result != EC.SUCCESS:
         log.warning(f"[LOGIN] Invalid credentials for {username}")
-        return jsonify({"code": EC.INVALID_CREDENTIALS, "message": "Invalid credentials"}), 401
+        return (
+            jsonify({"code": EC.INVALID_CREDENTIALS, "message": "Invalid credentials"}),
+            401,
+        )
     sql.cleanup_stale_devices()
     device_id = sql.get_online_device()
     if not device_id:
         log.warning(f"[LOGIN] No device online for {username}")
-        return jsonify({"code": EC.NO_DEVICE_ONLINE, "message": "No Raspberry Pi online"}), 503
+        return (
+            jsonify({"code": EC.NO_DEVICE_ONLINE, "message": "No Raspberry Pi online"}),
+            503,
+        )
     if sql.is_device_assigned_to_another_user(username, device_id):
         log.warning(f"[LOGIN] Device assigned to another user: {device_id}")
-        return jsonify({"code": EC.DEVICE_ASSIGNED_TO_OTHER, "message": "Device assigned to another user"}), 403
+        return (
+            jsonify(
+                {
+                    "code": EC.DEVICE_ASSIGNED_TO_OTHER,
+                    "message": "Device assigned to another user",
+                }
+            ),
+            403,
+        )
     user_device_id = sql.get_user_device(username)
     if user_device_id is None:
         sql.set_user_device(username, device_id)
@@ -83,7 +119,8 @@ def login():
     log.info(f"[LOGIN] {username} logged in successfully.")
     return jsonify({"token": token, "code": EC.SUCCESS}), 200
 
-@app.route('/user_info', methods=['GET'])
+
+@app.route("/user_info", methods=["GET"])
 def user_info():
     auth_header = request.headers.get("Authorization")
     if not auth_header:
@@ -94,7 +131,12 @@ def user_info():
         token = auth_header.split(" ")[1]
     except IndexError:
         log.error("user_info Invalid token format")
-        return jsonify({"code": EC.INVALID_TOKEN_FORMAT, "message": "Invalid token format"}), 401
+        return (
+            jsonify(
+                {"code": EC.INVALID_TOKEN_FORMAT, "message": "Invalid token format"}
+            ),
+            401,
+        )
 
     payload = jwt_manager.verify_token(token)
     if payload == "TOKEN_EXPIRED":
@@ -111,31 +153,65 @@ def user_info():
     elif user_data == EC.USER_NOT_FOUND:
         return jsonify({"code": EC.USER_NOT_FOUND, "message": "User not found"}), 404
     else:
-        return jsonify({"code": EC.INTERNAL_ERROR, "message": "Error retrieving user info"}), 500
+        return (
+            jsonify(
+                {"code": EC.INTERNAL_ERROR, "message": "Error retrieving user info"}
+            ),
+            500,
+        )
 
-@app.route('/forget_password', methods=['POST'])
+
+@app.route("/forget_password", methods=["POST"])
 def forget_password():
-    email = request.form.get('email')
-    old_password = request.form.get('old_password')
-    new_password = request.form.get('new_password')
+    email = request.form.get("email")
+    old_password = request.form.get("old_password")
+    new_password = request.form.get("new_password")
 
     result = sql.forget_password(email, old_password, new_password)
     log.info(f"[FORGET_PASSWORD] Email: {email} - Result: {result}")
 
     if result == EC.SUCCESS:
-        return jsonify({"code": EC.SUCCESS, "message": "Password changed successfully"}), 200
+        return (
+            jsonify({"code": EC.SUCCESS, "message": "Password changed successfully"}),
+            200,
+        )
     elif result == EC.SAME_PASSWORD:
-        return jsonify({"code": EC.SAME_PASSWORD, "message": "New password cannot be the same as old password"}), 400
+        return (
+            jsonify(
+                {
+                    "code": EC.SAME_PASSWORD,
+                    "message": "New password cannot be the same as old password",
+                }
+            ),
+            400,
+        )
     elif result == EC.INVALID_OLD_PASSWORD:
-        return jsonify({"code": EC.INVALID_OLD_PASSWORD, "message": "Invalid old password"}), 401
+        return (
+            jsonify(
+                {"code": EC.INVALID_OLD_PASSWORD, "message": "Invalid old password"}
+            ),
+            401,
+        )
     elif result == EC.INVALID_PASSWORD_FORMAT:
-        return jsonify({"code": EC.INVALID_PASSWORD_FORMAT, "message": "Invalid password format"}), 400
+        return (
+            jsonify(
+                {
+                    "code": EC.INVALID_PASSWORD_FORMAT,
+                    "message": "Invalid password format",
+                }
+            ),
+            400,
+        )
     elif result == EC.INVALID_CREDENTIALS:
-        return jsonify({"code": EC.INVALID_CREDENTIALS, "message": "Invalid credentials"}), 401
+        return (
+            jsonify({"code": EC.INVALID_CREDENTIALS, "message": "Invalid credentials"}),
+            401,
+        )
     else:
         return jsonify({"code": EC.INTERNAL_ERROR, "message": "Server error"}), 500
 
-@app.route('/change_password', methods=['POST'])
+
+@app.route("/change_password", methods=["POST"])
 def change_password():
     auth_header = request.headers.get("Authorization")
     if not auth_header:
@@ -144,7 +220,12 @@ def change_password():
     try:
         token = auth_header.split(" ")[1]
     except IndexError:
-        return jsonify({"code": EC.INVALID_TOKEN_FORMAT, "message": "Invalid token format"}), 401
+        return (
+            jsonify(
+                {"code": EC.INVALID_TOKEN_FORMAT, "message": "Invalid token format"}
+            ),
+            401,
+        )
 
     payload = jwt_manager.verify_token(token)
     if payload == "TOKEN_EXPIRED":
@@ -152,23 +233,51 @@ def change_password():
     elif payload == "INVALID_TOKEN":
         return jsonify({"code": EC.INVALID_TOKEN, "message": "Invalid token"}), 401
     username = payload.get("username")
-    old_password = request.form.get('old_password')
-    new_password = request.form.get('new_password')
+    old_password = request.form.get("old_password")
+    new_password = request.form.get("new_password")
     result = sql.change_password(username, old_password, new_password)
     if result == EC.SUCCESS:
-        return jsonify({"code": EC.SUCCESS, "message": "Password changed successfully"}), 200
+        return (
+            jsonify({"code": EC.SUCCESS, "message": "Password changed successfully"}),
+            200,
+        )
     elif result == EC.SAME_PASSWORD:
-        return jsonify({"code": EC.SAME_PASSWORD, "message": "New password cannot be same as old"}), 400
+        return (
+            jsonify(
+                {
+                    "code": EC.SAME_PASSWORD,
+                    "message": "New password cannot be same as old",
+                }
+            ),
+            400,
+        )
     elif result == EC.INVALID_PASSWORD_FORMAT:
-        return jsonify({"code": EC.INVALID_PASSWORD_FORMAT, "message": "Invalid password format"}), 400
+        return (
+            jsonify(
+                {
+                    "code": EC.INVALID_PASSWORD_FORMAT,
+                    "message": "Invalid password format",
+                }
+            ),
+            400,
+        )
     elif result == EC.INVALID_OLD_PASSWORD:
-        return jsonify({"code": EC.INVALID_OLD_PASSWORD, "message": "Invalid old password"}), 401
+        return (
+            jsonify(
+                {"code": EC.INVALID_OLD_PASSWORD, "message": "Invalid old password"}
+            ),
+            401,
+        )
     elif result == EC.INVALID_CREDENTIALS:
-        return jsonify({"code": EC.INVALID_CREDENTIALS, "message": "Invalid credentials"}), 401
+        return (
+            jsonify({"code": EC.INVALID_CREDENTIALS, "message": "Invalid credentials"}),
+            401,
+        )
     else:
         return jsonify({"code": EC.INTERNAL_ERROR, "message": "Server error"}), 500
 
-@app.route('/logout', methods=['POST'])
+
+@app.route("/logout", methods=["POST"])
 def logout():
     auth_header = request.headers.get("Authorization")
     if not auth_header:
@@ -177,7 +286,12 @@ def logout():
     try:
         token = auth_header.split(" ")[1]
     except IndexError:
-        return jsonify({"code": EC.INVALID_TOKEN_FORMAT, "message": "Invalid token format"}), 401
+        return (
+            jsonify(
+                {"code": EC.INVALID_TOKEN_FORMAT, "message": "Invalid token format"}
+            ),
+            401,
+        )
 
     payload = jwt_manager.verify_token(token)
     if payload == "TOKEN_EXPIRED":
@@ -187,25 +301,32 @@ def logout():
 
     username = payload.get("username")
     if not username:
-        return jsonify({"code": EC.INVALID_TOKEN, "message": "Invalid token payload"}), 401
+        return (
+            jsonify({"code": EC.INVALID_TOKEN, "message": "Invalid token payload"}),
+            401,
+        )
     # Xoá device_id khỏi user
     sql.clear_user_device(username)
     log.info(f"[LOGOUT] {username} logged out.")
     return jsonify({"code": EC.SUCCESS, "message": "Logged out"}), 200
 
 
-@app.route('/check_device_status')
+@app.route("/check_device_status")
 def check_device_status():
-    device_id = request.args.get('device_id')
+    device_id = request.args.get("device_id")
     if not device_id:
         log.warning("[DEVICE_STATUS] Missing device_id in request")
-        return jsonify({"code": EC.MISSING_DEVICE_ID, "message": "Missing device_id"}), 400
+        return (
+            jsonify({"code": EC.MISSING_DEVICE_ID, "message": "Missing device_id"}),
+            400,
+        )
 
     is_online = sql.is_device_online(device_id)
     log.info(f"[DEVICE_STATUS] Device {device_id} online: {is_online}")
     return jsonify({"online": is_online, "code": EC.SUCCESS}), 200
 
-@app.route('/device_info_by_username', methods=['GET'])
+
+@app.route("/device_info_by_username", methods=["GET"])
 def device_info_by_username():
     auth_header = request.headers.get("Authorization")
     if not auth_header:
@@ -214,7 +335,12 @@ def device_info_by_username():
     try:
         token = auth_header.split(" ")[1]
     except IndexError:
-        return jsonify({"code": EC.INVALID_TOKEN_FORMAT, "message": "Invalid token format"}), 401
+        return (
+            jsonify(
+                {"code": EC.INVALID_TOKEN_FORMAT, "message": "Invalid token format"}
+            ),
+            401,
+        )
 
     payload = jwt_manager.verify_token(token)
     if payload == "TOKEN_EXPIRED":
@@ -224,12 +350,18 @@ def device_info_by_username():
 
     username = payload.get("username")
     if not username:
-        return jsonify({"code": EC.INVALID_TOKEN, "message": "Invalid token payload"}), 401
+        return (
+            jsonify({"code": EC.INVALID_TOKEN, "message": "Invalid token payload"}),
+            401,
+        )
 
     device_info = sql.get_device_info_by_username(username)
     if device_info is None:
         log.warning(f"[DEVICE_INFO] No device info for username: {username}")
-        return jsonify({"code": EC.DEVICE_NOT_FOUND, "message": "Device not found"}), 404
+        return (
+            jsonify({"code": EC.DEVICE_NOT_FOUND, "message": "Device not found"}),
+            404,
+        )
     elif device_info == EC.DB_ERROR:
         log.error(f"[DEVICE_INFO] DB error for username: {username}")
         return jsonify({"code": EC.INTERNAL_ERROR, "message": "Database error"}), 500
@@ -237,9 +369,6 @@ def device_info_by_username():
     return jsonify({"code": EC.SUCCESS, "data": device_info}), 200
 
 
-@app.route('/index')
+@app.route("/index")
 def index():
-    return send_from_directory('static', 'index.html')
-
-
-    
+    return send_from_directory("static", "index.html")

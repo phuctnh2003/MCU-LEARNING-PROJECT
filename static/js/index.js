@@ -267,12 +267,12 @@ function filterButtons() {
   renderButtons(keyword);
 }
 
-window.showToast = function (type, title, text) {
-  Swal.fire({
+window.showToast = async function (type, title, text) {
+  await Swal.fire({
     icon: type,
     title: title,
     text: text,
-    timer: 1000,
+    timer: 2000,
     timerProgressBar: true,
     showConfirmButton: false
   });
@@ -428,8 +428,8 @@ async function attemptReconnectWithRetry() {
     title: "Mất kết nối thiết bị",
     text: "Thiết bị Raspberry Pi đang ngoại tuyến. Bạn muốn làm gì?",
     showCancelButton: true,
-    confirmButtonText: "Reconnect",
-    cancelButtonText: "Logout",
+    confirmButtonText: "Kết nối lại",
+    cancelButtonText: "Đăng xuất",
     allowOutsideClick: false,
     allowEscapeKey: false,
     didOpen: () => {

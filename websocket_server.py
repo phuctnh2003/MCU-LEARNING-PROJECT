@@ -1,3 +1,4 @@
+from function import explain_sensor_data
 from my_log import log
 from datetime import datetime, timezone
 from flask import Flask
@@ -140,7 +141,7 @@ def websocket_route(ws):
                             {
                                 "event": "data_config",
                                 "device_id": target_device_id,
-                                "data": payload,  # giữ nguyên cấu trúc JSON từ web gửi
+                                "data": payload,
                             }
                         )
                     )
@@ -148,7 +149,30 @@ def websocket_route(ws):
                     log.warning(
                         f"[SEND_CONFIG] Không tìm thấy thiết bị: {target_device_id}"
                     )
-
+            elif event == "explain_sensor_data":
+                log.info("[WS] Received explain_sensor_data request")
+                try:
+                    parsed_data = (
+                        json.loads(payload) if isinstance(payload, str) else payload
+                    )
+                    explanation = explain_sensor_data(parsed_data)
+                    log.info("[WS] Received format explain_sensor_data: " + explanation)
+                except Exception as e:
+                    explanation = f"Lỗi khi xử lý dữ liệu: {str(e)}"
+                for client in list(web_clients):
+                    try:
+                        client.send(
+                            json.dumps(
+                                {
+                                    "event": "gpt_explanation_result",
+                                    "device_id": device_id,
+                                    "data": {"content": explanation},
+                                }
+                            )
+                        )
+                    except Exception as e:
+                        log.warning(f"[WS] Lỗi gửi cho web client: {e}")
+                        web_clients.remove(client)
         except Exception as e:
             log.warning(f"[WS-ERROR] {e}")
             break

@@ -122,6 +122,16 @@
     white-space: pre-wrap;
   }
 
+  #output_ex {
+    margin-top: 30px;
+    background-color: #ffffff;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid #d3dce3;
+    font-family: monospace;
+    white-space: pre-wrap;
+  }
+
   .hidden {
     display: none;
   }
@@ -137,7 +147,6 @@
     transition: background-color 0.2s;
     margin-top: 16px;
     margin-bottom: 24px;
-    /* Giữ khoảng cách với #output */
     display: block;
   }
 
@@ -286,11 +295,22 @@
     </table>
     <button type="button" id="addUartInitRowBtn">+ Thêm dòng lệnh</button>
   </fieldset>
+  <fieldset id="customCodeBlock" class="hidden">
+    <legend>Chỉnh sửa mã điều khiển (Python)</legend>
+    <label for="customCode">Code:</label>
+    <textarea id="customCode" name="custom_code" rows="12" style="width: 100%; font-family: monospace;"
+      placeholder="# Viết code điều khiển thiết bị tại đây..."></textarea>
+  </fieldset>
 
   <button type="submit" class="submit-btn">Thực thi</button>
   <fieldset>
     <legend>Kết quả thực thi</legend>
     <pre id="output"></pre>
+  </fieldset>
+  <button type="button" id="explainBtn" class="submit-btn">Giải thích</button>
+  <fieldset id="explanationField" class="hidden">
+    <legend>Giải thích dữ liệu</legend>
+    <pre id="output_ex"></pre>
   </fieldset>
 </form>
 <script src="form-script.js"></script>

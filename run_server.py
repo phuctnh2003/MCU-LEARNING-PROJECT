@@ -5,7 +5,6 @@ from websocket_server import app_ws as ws_app
 
 def run_rest():
     try:
-        print("Starting REST API on port 5555...")
         rest_app.run(host="0.0.0.0", port=5555)
     except Exception as e:
         print(f"REST API error: {e}")
@@ -13,7 +12,6 @@ def run_rest():
 
 def run_ws():
     try:
-        print("Starting WebSocket server on port 5050...")
         ws_app.run(host="0.0.0.0", port=5050)
     except Exception as e:
         print(f"WebSocket error: {e}")

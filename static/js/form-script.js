@@ -1,10 +1,10 @@
 let socket;
-
+let lastSensorOutput = null;
 function initWebSocket() {
     console.log("[Đang khởi tạo kết nối WebSocket...");
 
     socket = new WebSocket("wss://mcu-learning.project.io.vn/ws");
-
+    // socket = new WebSocket("ws://127.0.0.1:5050/ws");
     socket.onopen = () => {
         console.log("WebSocket đã kết nối thành công");
     };
@@ -16,16 +16,29 @@ function initWebSocket() {
     socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         const { event: evt, data } = msg;
-
+        console.log("Raw WebSocket message:", event.data);
+        console.log("Parsed message:", { evt, data });
         if (evt === "data_sensor_web") {
             const output = document.getElementById("output");
             if (output) {
                 output.textContent = JSON.stringify(data.received || data, null, 2);
+                lastSensorOutput = JSON.stringify(data.received || data, null, 2);
             } else {
                 showToast("error", "Lỗi", "Nhận kết quả thất bại");
             }
-        }
-    };
+        } else if (evt === "gpt_explanation_result") {
+            const explainOutput = document.getElementById("output_ex");
+            const explainField = document.getElementById("explanationField");
+
+            if (data.error) {
+                explainOutput.textContent = "Lỗi: " + data.error;
+            } else {
+                explainOutput.textContent = data.content;
+            }
+
+            explainField.classList.remove("hidden");
+        };
+    }
 }
 
 function extractDeviceIdFromJwt() {
@@ -41,6 +54,7 @@ function extractDeviceIdFromJwt() {
 }
 
 function showInterfaceForm(type) {
+    document.getElementById("customCodeBlock").classList.add("hidden");
     const pollingInput = document.querySelector('input[name="polling_interval_ms"]');
     document.getElementById("i2cFields").classList.add("hidden");
     document.getElementById("uartFields").classList.add("hidden");
@@ -76,7 +90,20 @@ function showInterfaceForm(type) {
             document.getElementById("uartFields").classList.remove("hidden");
             document.getElementById("uartFieldPatternTable").classList.remove("hidden");
             document.getElementById("uartInitCommandSection").classList.remove("hidden");
+        } else if (type === "custom") {
+            const nameInput = document.querySelector("input[name='name']");
+            if (nameInput) nameInput.removeAttribute("required");
+            document.getElementById("commonFields").style.display = "none";
+            if (pollingInput) pollingInput.removeAttribute("required");
+            document.querySelector('fieldset').classList.add('hidden');
+            document.getElementById("customCodeBlock").classList.remove("hidden");
+            // Ẩn các phần khác
+            [
+                "i2cFields", "uartFields", "spiFields", "initSequenceFields",
+                "binaryFieldTable", "uartFieldPatternTable", "uartInitCommandSection"
+            ].forEach(id => document.getElementById(id).classList.add("hidden"));
         }
+
     }
 }
 
@@ -153,17 +180,26 @@ function initFormEvents() {
             const iface = formData.get("interface");
 
             const json = {
-                name: formData.get("name"),
                 interface: iface,
-                fields: []
             };
-            if (iface !== "spi") {
+            if (iface !== "custom") {
+                json.fields = [];
+            }
+
+            // Common fields
+            if (iface !== "custom") {
+                json.name = formData.get("name");
+            }
+
+            if (iface !== "spi" && iface !== "custom") {
                 json.polling_interval_ms = parseInt(formData.get("polling_interval_ms")) || 1000;
             }
+
             if (formData.get("sample_count")) {
                 json.sample_count = parseInt(formData.get("sample_count"));
             }
 
+            // Build data by interface
             if (iface === "i2c") {
                 json.address = formData.get("address").trim();
                 json.read_register = formData.get("read_register").trim();
@@ -192,26 +228,56 @@ function initFormEvents() {
             } else if (iface === "uart") {
                 json.port = formData.get("port");
                 json.baudrate = parseInt(formData.get("baudrate"));
-                json.read_command = formData.get("read_command_uart");
-                json.response_terminator = formData.get("response_terminator");
+                let readCmd = formData.get("read_command_uart");
+                try {
+                    readCmd = JSON.parse(`"${readCmd}"`);
+                } catch (e) {
+                    console.warn("Lỗi parse read_command:", readCmd);
+                }
+                json.read_command = readCmd;
+
+                let terminator = formData.get("response_terminator");
+                try {
+                    terminator = JSON.parse(`"${terminator}"`);
+                } catch (e) {
+                    console.warn("Lỗi parse terminator:", terminator);
+                }
+                json.response_terminator = terminator;
+
 
                 const initCmds = [];
                 document.querySelectorAll("#uartInitTable tbody tr").forEach(tr => {
-                    const cmd = tr.querySelector(".uart-init-cmd")?.value;
-                    if (cmd) initCmds.push(cmd);
+                    let cmd = tr.querySelector(".uart-init-cmd")?.value.trim();
+                    if (cmd) {
+                        try {
+                            cmd = JSON.parse(`"${cmd}"`);
+                        } catch (e) {
+                            console.warn("Lỗi parse init_command:", cmd);
+                        }
+                        initCmds.push(cmd);
+                    }
                 });
+
                 if (initCmds.length > 0) {
                     json.init_command = initCmds;
                 }
 
                 document.querySelectorAll("#uartFieldTable tbody tr").forEach(tr => {
                     const name = tr.querySelector(".uart-fname")?.value.trim();
-                    const pattern = tr.querySelector(".uart-pattern")?.value.trim();
+                    let pattern = tr.querySelector(".uart-pattern")?.value.trim();
                     const type = tr.querySelector(".uart-type")?.value;
+
+                    try {
+                        pattern = JSON.parse(`"${pattern}"`);
+                    } catch (e) {
+                        console.warn("Không thể parse pattern:", pattern);
+                    }
+
                     if (name && pattern) {
                         json.fields.push({ name, pattern, type });
                     }
                 });
+
 
             } else if (iface === "spi") {
                 json.bus = parseInt(formData.get("bus"));
@@ -232,35 +298,61 @@ function initFormEvents() {
                     const scaleValue = tr.querySelector(".fscale")?.value;
                     const scale = scaleValue ? parseFloat(scaleValue) : 1.0;
                     if (name && !isNaN(start) && length > 0) {
-                        json.fields.push({
-                            name,
-                            start,
-                            length,
-                            signed,
-                            scale
-                        });
+                        json.fields.push({ name, start, length, signed, scale });
                     }
                 });
+
+            } else if (iface === "custom") {
+                const code = formData.get("custom_code")?.trim();
+                if (!code) {
+                    showToast("error", "Lỗi", "Vui lòng nhập mã code");
+                    return;
+                }
+                json.code = code;
             }
-            const deviceId = extractDeviceIdFromJwt();
+
+            // Gửi dữ liệu WebSocket (chung cho mọi giao thức)
             if (socket && socket.readyState === WebSocket.OPEN) {
                 const output = document.getElementById("output");
                 if (output) {
                     output.textContent = "⏳ Đang đợi kết quả...";
                 }
-
+                console.log(json)
                 socket.send(JSON.stringify({
                     event: "send_config",
-                    device_id: deviceId || "",
+                    device_id: extractDeviceIdFromJwt() || "",
                     data: json
                 }));
-                showToast("success", "Thành công", "Cấu hình đã được nạp");
+
+                showToast("success", "Thành công", "Đã gửi cấu hình");
             } else {
-                showToast("error", "Lỗi", "Cấu hình nạp thất bại");
+                showToast("error", "Lỗi", "WebSocket chưa sẵn sàng");
             }
-
-
         });
     }
-
 }
+
+
+document.getElementById("explainBtn").addEventListener("click", function () {
+    if (!lastSensorOutput) {
+        showToast("error", "Lỗi", "Không có dữ liệu để giải thích");
+        return;
+    }
+
+    const explainOutput = document.getElementById("output_ex");
+    const explainField = document.getElementById("explanationField");
+
+    if (explainOutput) {
+        explainOutput.textContent = "⏳ Đang đợi kết quả...";
+        explainField.classList.remove("hidden");
+    }
+
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+            event: "explain_sensor_data",
+            data: lastSensorOutput
+        }));
+    } else {
+        showToast("error", "Lỗi", "WebSocket chưa sẵn sàng");
+    }
+});
