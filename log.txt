@@ -3994,3 +3994,5 @@
 2025-07-15 01:47:18,176 - INFO - [DEVICE_STATUS] Device raspberry-01 online: True
 2025-07-15 01:47:21,175 - INFO - [DEVICE_STATUS] Device raspberry-01 online: True
 2025-07-15 01:47:24,177 - INFO - [DEVICE_STATUS] Device raspberry-01 online: True
+2025-07-16 12:57:30,891 - ERROR - Error initializing database: 2005 (HY000): Unknown MySQL server host 'db' (11001)
+2025-07-16 12:58:19,012 - ERROR - user_info Token expired

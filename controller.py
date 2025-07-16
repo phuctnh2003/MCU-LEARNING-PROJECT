@@ -23,7 +23,7 @@ def serve_html():
 
 @app.route("/log")
 def view_log():
-    log_path = "/home/phuctnh/mcu-learning-v1.0-beta/app.log"
+    log_path = os.path.join(os.path.dirname(__file__), "app.log")
 
     if not os.path.exists(log_path):
         return jsonify({"error": "Log file not found"}), 404

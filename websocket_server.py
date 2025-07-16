@@ -151,10 +151,15 @@ def websocket_route(ws):
                     )
             elif event == "explain_sensor_data":
                 log.info("[WS] Received explain_sensor_data request")
+                log.info(f"[WS] Raw payload nhận được: {repr(payload)}")
                 try:
-                    parsed_data = (
-                        json.loads(payload) if isinstance(payload, str) else payload
-                    )
+                    if isinstance(payload, str) and (
+                        payload.strip().startswith("{")
+                        or payload.strip().startswith("[")
+                    ):
+                        parsed_data = json.loads(payload)
+                    else:
+                        parsed_data = {"output": payload}
                     explanation = explain_sensor_data(parsed_data)
                     log.info("[WS] Received format explain_sensor_data: " + explanation)
                 except Exception as e:

@@ -23,14 +23,23 @@ def extract_code(text):
 
 def clean_markdown(md_text: str) -> str:
     """
-    Loại bỏ các ký tự định dạng markdown như **, __, ###, - ...
+    Loại bỏ các ký tự định dạng markdown như **, __, ***, ```, ###, - ...
     """
     text = md_text
-    text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)  # **bold**
-    text = re.sub(r"__([^_]+)__", r"\1", text)  # __underline__
-    text = re.sub(r"`([^`]+)`", r"\1", text)  # `code`
-    text = re.sub(r"#+\s*", "", text)  # ### headers
-    text = re.sub(r"-\s+", "- ", text)  # Normalize list
+    # ***bold+italic***
+    text = re.sub(r"\*\*\*(.*?)\*\*\*", r"\1", text)
+    # '''code'''
+    text = re.sub(r"'''(.*?)'''", r"\1", text, flags=re.DOTALL)
+    # **bold**
+    text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)
+    # __underline__
+    text = re.sub(r"__([^_]+)__", r"\1", text)
+    # `inline code`
+    text = re.sub(r"`([^`]+)`", r"\1", text)
+    # ### Headers
+    text = re.sub(r"#+\s*", "", text)
+    # Normalize list dash
+    text = re.sub(r"-\s+", "- ", text)
     return text.strip()
 
 
