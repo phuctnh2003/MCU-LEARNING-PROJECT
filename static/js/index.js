@@ -117,7 +117,7 @@ async function updateConnectionTab() {
           const toggle = document.getElementById('deviceToggle');
 
           statusIndicator.className = 'status-indicator ' + (isOnline ? 'online' : 'offline');
-          statusText.textContent = isOnline ? 'Connected' : 'Disconnected';
+          statusText.textContent = isOnline ? 'Đã kết nối' : 'Mất kết nối';
           statusText.style.color = isOnline ? '#2ecc71' : '#e74c3c';
           toggle.checked = isOnline;
         }
@@ -325,7 +325,7 @@ async function fetchUserInfo() {
     showToast("error", "Token không hợp lệ", "Token không hợp lệ, hãy đăng nhập lại");
     localStorage.removeItem("jwt_token");
     updateStatusDot(false);
-    window.location.href = "/";
+    await logoutUser();
     return;
   }
 
@@ -368,8 +368,7 @@ async function fetchUserInfo() {
     } else {
       handleApiError(data);
       localStorage.removeItem("jwt_token");
-      updateStatusDot(false);
-      window.location.href = "/";
+      await logoutUser();
     }
   } catch (err) {
     updateStatusDot(false);
@@ -427,9 +426,10 @@ async function attemptReconnectWithRetry() {
     icon: "warning",
     title: "Mất kết nối thiết bị",
     text: "Thiết bị Raspberry Pi đang ngoại tuyến. Bạn muốn làm gì?",
-    showCancelButton: true,
+    showDenyButton: true,
+    showConfirmButton: true,
     confirmButtonText: "Kết nối lại",
-    cancelButtonText: "Đăng xuất",
+    denyButtonText: "Đăng xuất",
     allowOutsideClick: false,
     allowEscapeKey: false,
     didOpen: () => {
@@ -590,11 +590,12 @@ document.getElementById('resetPasswordBtn').addEventListener('click', function (
                 <input type="password" id="oldPassword" class="swal2-input" placeholder="Mật khẩu cũ">
                 <input type="password" id="newPassword" class="swal2-input" placeholder="Mật khẩu mới">
                 <label style="display:flex;align-items:center;justify-content:center;margin-top:5px;">
-                    <input type="checkbox" id="showPasswordToggle" style="margin-right:5px;">
+                Ẩn/Hiện mật khẩu&nbsp;&nbsp;<input type="checkbox" id="showPasswordToggle" style="margin-right:5px;">
                 </label>
             `,
-    confirmButtonText: 'Change',
+    confirmButtonText: 'Thay đổi',
     showCancelButton: true,
+    cancelButtonText: 'Hủy',
     focusConfirm: false,
     didOpen: () => {
       document.getElementById('showPasswordToggle').addEventListener('change', function () {

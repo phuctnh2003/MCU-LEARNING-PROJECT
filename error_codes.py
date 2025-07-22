@@ -1,3 +1,4 @@
+# error_codes.py
 # Success
 SUCCESS = 0
 
@@ -20,8 +21,8 @@ INVALID_TOKEN_FORMAT = 1208
 # Device
 NO_DEVICE_ONLINE = 2001
 DEVICE_ASSIGNED_TO_OTHER = 2002
-DEVICE_MISMATCH = 2003 #  Tài khoản được liên kết với một thiết bị khác
-MISSING_DEVICE_ID = 2004 #  Thiếu device_id
+DEVICE_MISMATCH = 2003  #  Tài khoản được liên kết với một thiết bị khác
+MISSING_DEVICE_ID = 2004  #  Thiếu device_id
 
 # DB errors
 DB_ERROR = 3001

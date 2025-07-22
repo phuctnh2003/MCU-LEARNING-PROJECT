@@ -13,8 +13,8 @@ function initWebSocket() {
 
     socket.onclose = () => {
         console.log("WebSocket đã mất kết nối");
-        showToast("error", "Mất kết nối", "WebSocket bị ngắt, đang thử lại sau 3 giây...");
-        setTimeout(initWebSocket, 3000);
+        showToast("error", "Mất kết nối", "WebSocket bị ngắt, đang thử lại sau 5 giây...");
+        setTimeout(initWebSocket, 5000);
     };
 
     socket.onmessage = (event) => {

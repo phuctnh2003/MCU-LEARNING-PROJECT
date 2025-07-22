@@ -55,7 +55,7 @@ def explain_sensor_data(data: dict, clean_output=True) -> str:
     completion = client.chat.completions.create(
         model="deepseek/deepseek-r1-0528",
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=2000,
+        max_tokens=3000,
     )
     raw_output = completion.choices[0].message.content
     return clean_markdown(raw_output) if clean_output else raw_output
