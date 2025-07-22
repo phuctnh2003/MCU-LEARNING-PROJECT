@@ -1,0 +1,25 @@
+{
+  "name": "dual-sensor-mock",
+  "interface": "spi",
+  "bus": 0,
+  "device": 0,
+  "speed": 500000,
+  "mode": 0,
+  "read_command": ["0x00", "0x00", "0x00", "0x00"],
+  "fields": [
+    {
+      "name": "temperature",
+      "start": 0,
+      "length": 2,
+      "signed": false,
+      "scale": 0.1
+    },
+    {
+      "name": "humidity",
+      "start": 2,
+      "length": 2,
+      "signed": false,
+      "scale": 0.1
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "raspberry-uno-test",
+  "interface": "uart",
+  "port": "/dev/ttyS0",
+  "baudrate": 9600,
+  "init_command": [],
+  "read_command": "",
+  "response_terminator": "\n",
+  "fields": [
+    {
+      "name": "temperature",
+      "pattern": "Temp:(\\d+\\.\\d+)",
+      "type": "float"
+    },
+    {
+      "name": "humidity",
+      "pattern": "Hum:(\\d+\\.\\d+)",
+      "type": "float"
+    }
+  ],
+  "sample_count": 5,
+  "polling_interval_ms": 1000
+}
